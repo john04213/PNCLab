@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
                         modifier = modifier
 
                     ) {
-                        EventPlanningDashboard()
+                        EventPlannerApp()
                     }
                 }
             }
@@ -43,26 +43,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Hello $name!",
-            color = Color.Blue
-        )
-        Text(
-            text = "Welcome tp PNC Bank"
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    JetpackComposeDemosTheme {
-        Greeting("Android")
-    }
-}

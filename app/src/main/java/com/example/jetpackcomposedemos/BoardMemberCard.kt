@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.pnc.jetpackcomposedemos
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -6,53 +6,52 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.jetpackcomposedemos.BoardMember
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
 @Composable
-fun BoardMemberCard(boardMember: BoardMember) {
+fun BoardMemberCard(member: BoardMember,
+                    onClick: () -> Unit) {
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
+            .fillMaxWidth(),
+        onClick = onClick
     ) {
-        Column(){
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             Text(
-                text = boardMember.firstName,
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(16.dp)
+                text = "${member.firstName} ${member.lastName}",
+                style = MaterialTheme.typography.titleMedium
             )
-            Text(
-                text = boardMember.lastName,
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(16.dp)
-            )
-
+            Text("Title: ${member.title}")
         }
     }
 
 }
 
-@Preview(showBackground = true)
+
+@Preview(showBackground = false)
 @Composable
 fun BoardMemberCardPreview() {
+    val member = BoardMember(
+        id = 1,
+        firstName = "Morgan",
+        lastName = "Sloan",
+        title = "CEO",
+        imageUrl = "/images/MorganSloan.jpg",
+        bio = "Some impressive stuff"
+    )
+
     JetpackComposeDemosTheme {
-        val boardMember = BoardMember(
-            id = 1,
-            firstName = "John",
-            lastName = "Doe",
-            imageUrl = "Image URL",
-            title = "Software Engineer",
-            gender = "male",
-            bio = "Junior Software Engineer at PNC banking"
-        )
         BoardMemberCard(
-            boardMember = boardMember
+            member = member,
+            onClick = {}
         )
     }
 }

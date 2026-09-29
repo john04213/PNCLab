@@ -1,5 +1,6 @@
 package com.example.jetpackcomposedemos
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,12 +15,16 @@ import androidx.compose.ui.unit.dp
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
 @Composable
-fun ArtistCard(artist: Artist) {
-
+fun ArtistCard(artist: Artist,
+               onClick: () -> Unit
+) {
+    Log.d("artistCard", "Recomposing ArtistCard for ${artist.name}")
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+
     ) {
         Column(){
             Text(
@@ -36,7 +41,7 @@ fun ArtistCard(artist: Artist) {
 
 @Preview(showBackground = true)
 @Composable
-fun ArtistList() {
+fun ArtistCardPreview() {
     JetpackComposeDemosTheme {
         val artist = Artist(
             id = 1,
@@ -48,7 +53,8 @@ fun ArtistList() {
             tags = "Tags"
         )
         ArtistCard(
-            artist = artist
+            artist = artist,
+            onClick = {}
         )
     }
 }
