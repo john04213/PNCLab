@@ -13,6 +13,9 @@ navigationCompose = "2.10.2"
 kotlinxSerializationJson = "1.7.3"
 material3 = "1.4.0"
 recyclerview = "1.4.0"
+uiGraphics = "1.12.1"
+uiText = "1.12.1"
+composeMaterial3 = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +41,10 @@ androidx-material-icons = {group = "androidx.compose.material", name = "material
 androidx-compose-viewbinding = { group = "androidx.compose.ui", name = "ui-viewbinding" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-compose-material3-adaptive = {group = "androidx.compose.material3.adaptive", name = "adaptive", version = "1.3.0"}
+compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial3" }
 
 [bundles]
 coil = ["coil-compose", "coil-loader"]

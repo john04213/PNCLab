@@ -9,19 +9,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
 @Composable
-fun GenreFilter(){
-    var filter by remember {
-        mutableStateOf("")
-    }
+fun GenreFilter(
+    genreFilter: String,
+    onGenreChange: (String) -> Unit,
 
+){
     TextField(
-        value = filter,
-        onValueChange = {
-            filter = it
-        },
+        value = genreFilter,
+        onValueChange = onGenreChange,
         label = {
             Text("Genre:")
         }
     )
-
 }
+
+
+

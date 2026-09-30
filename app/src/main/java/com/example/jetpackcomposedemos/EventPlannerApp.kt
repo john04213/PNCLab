@@ -1,16 +1,22 @@
 package com.example.jetpackcomposedemos
 
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.window.core.layout.WindowSizeClass
 
 @Composable
-fun EventPlannerApp(
+fun EventPlannerApp(){
 
-){
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+    val useTwoPaneLayout = windowSizeClass.isWidthAtLeastBreakpoint(
+        WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND
+    )
+
     val navController = rememberNavController()
     val artists = Artist.generateArtists(100)
     val boardMembers = BoardMember.getBoardMembers()
@@ -42,7 +48,8 @@ fun EventPlannerApp(
                 },
                 {
                     navController.popBackStack()
-                }
+                },
+                useTwoPaneLayout = useTwoPaneLayout
             )
         }
         composable<BoardMemberListRoute> {

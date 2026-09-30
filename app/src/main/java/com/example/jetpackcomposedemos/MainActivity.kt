@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            JetpackComposeDemosTheme {
+            KazooTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 
                     val modifier = Modifier
