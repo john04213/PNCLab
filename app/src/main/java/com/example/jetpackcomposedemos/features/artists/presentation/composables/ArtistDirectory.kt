@@ -1,7 +1,6 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.features.boardmembers.presentation
 
 import android.annotation.SuppressLint
-import android.location.Location
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -14,8 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Filter
@@ -23,42 +20,39 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import java.nio.file.WatchEvent
+import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
+import com.example.jetpackcomposedemos.ArtistList
+import com.example.jetpackcomposedemos.GenreFilter
+import com.example.jetpackcomposedemos.LocationFilter
+import com.example.jetpackcomposedemos.features.artists.domain.Artist
+import com.example.jetpackcomposedemos.features.artists.presentation.ArtistDetails
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistDirectory(
-    artists: List<Artist>,
-    onArtistSelected: (Int) -> Unit,
-    onBack:() -> Unit,
-    useTwoPaneLayout: Boolean
+    state : ArtistDirectoryState,
+    useTwoPaneLayout: Boolean,
+    onBack:() -> Unit = {},
+    onArtistSelected: (Int) -> Unit ={},
+    onGenreChange: (String) -> Unit = {},
+    onLocationChange: (String) -> Unit = {},
+    onShowFilterChange: (Boolean) -> Unit = {}
 ) {
-    var state by remember {
-        mutableStateOf(ArtistDirectoryState(artists = artists))
-    }
 
     Scaffold(
         topBar = {
@@ -88,7 +82,7 @@ fun ArtistDirectory(
                     Icon(Icons.Filled.Filter, contentDescription = "Filter")
                 },
                 onClick = {
-                    state = state.copy(showFilter = true)
+                    onShowFilterChange(true)
                 }
             )
         }
@@ -104,9 +98,7 @@ fun ArtistDirectory(
                 Box( modifier = Modifier.weight(1f)){
                     ArtistList(
                         artists = state.displayedArtist,
-                        onArtistSelected =  { artistId ->
-                            state = state.copy(selectedArtistId = artistId)
-                        },
+                        onArtistSelected = onArtistSelected,
                         innerPadding = PaddingValues(0.dp)
                     )
                 }
@@ -142,7 +134,7 @@ fun ArtistDirectory(
         if (state.showFilter) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    state = state.copy(showFilter = false)
+                   onShowFilterChange(false)
                 }
             ){
                 Column(
@@ -155,22 +147,20 @@ fun ArtistDirectory(
                     )
                     GenreFilter(
                         genreFilter = state.genreFilter,
-                        onGenreChange = {
-                            state = state.copy(genreFilter = it)
-                        }
+                        onGenreChange = onGenreChange
+
                     )
                     LocationFilter(
                         locationFilter = state.locationFilter,
-                        onLocationChange = {
-                            state = state.copy(locationFilter = it)
-                        }
+                        onLocationChange = onLocationChange
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ){
                         Button(
                             onClick = {
-                                state = state.copy(genreFilter = "", locationFilter = "")
+                                onGenreChange("")
+                                onLocationChange("")
 
                             },
                             colors = ButtonDefaults.buttonColors(
@@ -182,7 +172,7 @@ fun ArtistDirectory(
                         }
                         Button(
                             onClick = {
-                                state = state.copy(showFilter = false)
+                                onShowFilterChange(false)
                             }
                         ){
                             Text("Close")
@@ -205,9 +195,7 @@ fun ArtistDirectory(
 @Composable
 fun CompactArtistDirectoryPreview(){
   ArtistDirectory(
-      artists = Artist.getArtists(),
-      onArtistSelected = {},
-      onBack = {},
+      state = ArtistDirectoryState(Artist.getArtists()),
       useTwoPaneLayout = false
   )
 }
@@ -219,9 +207,7 @@ fun CompactArtistDirectoryPreview(){
 @Composable
 fun ExpandedArtistDirectoryPreview(){
     ArtistDirectory(
-        artists = Artist.getArtists(),
-        onArtistSelected = {},
-        onBack = {},
+        state = ArtistDirectoryState(Artist.getArtists()),
         useTwoPaneLayout = false
     )
 }

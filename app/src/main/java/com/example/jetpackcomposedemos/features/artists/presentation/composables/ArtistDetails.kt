@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.features.artists.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
 @Composable

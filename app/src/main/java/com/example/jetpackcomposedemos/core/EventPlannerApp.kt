@@ -18,7 +18,7 @@ fun EventPlannerApp(){
     )
 
     val navController = rememberNavController()
-    val artists = Artist.generateArtists(100)
+    val artists = Artist.getArtists()
     val boardMembers = BoardMember.getBoardMembers()
 
     NavHost(
@@ -40,13 +40,12 @@ fun EventPlannerApp(){
         }
 
         composable<ArtistListRoute> {
-            ArtistDirectory(
-                artists = artists,
+            ArtistDirectoryRoute(
                 onArtistSelected = { artistId ->
                     navController.navigate(ArtistDetailsRoute(artistId))
 
                 },
-                {
+               onBack = {
                     navController.popBackStack()
                 },
                 useTwoPaneLayout = useTwoPaneLayout
