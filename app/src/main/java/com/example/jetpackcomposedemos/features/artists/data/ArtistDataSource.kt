@@ -1,4 +1,5 @@
 package com.example.jetpackcomposedemos.features.artists.data
 
-class ArtistDataSouce {
+interface  ArtistDataSource {
+    suspend fun getArtists(): List<ArtistDto>
 }

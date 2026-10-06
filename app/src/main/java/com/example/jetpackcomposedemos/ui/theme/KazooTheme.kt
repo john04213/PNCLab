@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape

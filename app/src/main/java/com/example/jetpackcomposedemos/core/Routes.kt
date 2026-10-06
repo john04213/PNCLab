@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.core
 
 import kotlinx.serialization.Serializable
 

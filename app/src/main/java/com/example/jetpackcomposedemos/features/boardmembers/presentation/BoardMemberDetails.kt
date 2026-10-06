@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.features.boardmembers.presentation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -10,6 +10,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
 
 @Composable
 fun BoardMemberDetails(boardMember: BoardMember) {

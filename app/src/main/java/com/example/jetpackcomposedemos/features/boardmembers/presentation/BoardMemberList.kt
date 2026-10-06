@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.features.boardmembers.presentation
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
 import com.pnc.jetpackcomposedemos.BoardMemberCard
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")

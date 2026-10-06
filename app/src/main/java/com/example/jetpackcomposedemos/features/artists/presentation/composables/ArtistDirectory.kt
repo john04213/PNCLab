@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos.features.boardmembers.presentation
+package com.example.jetpackcomposedemos.features.artists.presentation.composables
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
@@ -33,12 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.jetpackcomposedemos.core.presentation.TextFilter
 import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
-import com.example.jetpackcomposedemos.ArtistList
-import com.example.jetpackcomposedemos.GenreFilter
-import com.example.jetpackcomposedemos.LocationFilter
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
-import com.example.jetpackcomposedemos.features.artists.presentation.ArtistDetails
 
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -108,14 +105,19 @@ fun ArtistDirectory(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ){
                     Text("Selected Artist")
+
+                    val selectedArtist = state.selectedArtist
+
                     AnimatedVisibility(
-                        visible = state.selectedArtist != null,
+                        visible = selectedArtist != null,
                         enter = fadeIn() + expandVertically(expandFrom = Alignment.Top) ,
                         exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
                     ) {
-                        ArtistDetails(
-                            artist = state.selectedArtist!!
-                        )
+                        if (selectedArtist != null) {
+                            ArtistDetails(
+                                artistId = selectedArtist.id
+                            )
+                        }
                     }
                 }
             }
@@ -145,14 +147,16 @@ fun ArtistDirectory(
                         text = "Filter Artist",
                         style = MaterialTheme.typography.titleSmall
                     )
-                    GenreFilter(
-                        genreFilter = state.genreFilter,
-                        onGenreChange = onGenreChange
+                    TextFilter(
+                        label = "Genre",
+                        Filter = state.genreFilter,
+                        onFilterChange = onGenreChange
 
                     )
-                    LocationFilter(
-                        locationFilter = state.locationFilter,
-                        onLocationChange = onLocationChange
+                    TextFilter(
+                        label = "Location",
+                        Filter = state.locationFilter,
+                        onFilterChange = onLocationChange
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -195,7 +199,7 @@ fun ArtistDirectory(
 @Composable
 fun CompactArtistDirectoryPreview(){
   ArtistDirectory(
-      state = ArtistDirectoryState(Artist.getArtists()),
+      state = ArtistDirectoryState(),
       useTwoPaneLayout = false
   )
 }
@@ -207,7 +211,7 @@ fun CompactArtistDirectoryPreview(){
 @Composable
 fun ExpandedArtistDirectoryPreview(){
     ArtistDirectory(
-        state = ArtistDirectoryState(Artist.getArtists()),
+        state = ArtistDirectoryState(),
         useTwoPaneLayout = false
     )
 }

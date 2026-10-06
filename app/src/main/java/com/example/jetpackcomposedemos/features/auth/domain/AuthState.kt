@@ -1,4 +1,6 @@
 package com.example.jetpackcomposedemos.features.auth.domain
 
-interface AuthState {
+sealed interface AuthState {
+    data class Authenticated(val user: User): AuthState
+    data object Unauthenticated: AuthState
 }

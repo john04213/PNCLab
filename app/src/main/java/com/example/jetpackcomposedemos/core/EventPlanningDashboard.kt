@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.core
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,11 +34,12 @@ fun EventPlanningDashboard(
             modifier = Modifier.fillMaxWidth()) {
             Text("View Board Members")
         }
-        Button(onClick = onLegacyArtists,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("View Legacy Artists")
-        }
+
+//        Button(onClick = onLegacyArtists,
+//            modifier = Modifier.fillMaxWidth()
+//        ) {
+//            Text("View Legacy Artists")
+//        }
     }
 }
 

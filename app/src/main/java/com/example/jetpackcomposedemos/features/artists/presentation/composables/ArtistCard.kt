@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos.features.artists.presentation
+package com.example.jetpackcomposedemos.features.artists.presentation.composables
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -53,7 +53,7 @@ fun ArtistCard(artist: Artist,
         shape = MaterialTheme.shapes.medium
 
     ) {
-        Column(){
+        Column{
             IconToggleButton(
                 checked = isFavorite,
                 onCheckedChange = {
@@ -99,7 +99,7 @@ fun ArtistCardPreview() {
             location = "Location",
             imageUrl = "Image URL",
             description = "Description",
-            tags = "Tags"
+            isAvailable = true
         )
         ArtistCard(
             artist = artist,

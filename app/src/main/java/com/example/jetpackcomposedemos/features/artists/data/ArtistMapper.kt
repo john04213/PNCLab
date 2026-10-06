@@ -2,9 +2,9 @@ package com.example.jetpackcomposedemos.features.artists.data
 
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 
-object AtistMapper {
+object ArtistMapper {
 
-    fun mapToDoomain(dto: ArtistDto): Artist {
+    fun mapToDomain(dto: ArtistDto): Artist {
         return Artist(
             id = dto.id,
             name = dto.name,

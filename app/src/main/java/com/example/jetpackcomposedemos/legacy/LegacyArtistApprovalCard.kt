@@ -1,8 +1,9 @@
-package com.example.jetpackcomposedemos
+package com.example.jetpackcomposedemos.legacy
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidViewBinding
+import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.databinding.LegacyArtistApprovalBinding
 
 @Composable

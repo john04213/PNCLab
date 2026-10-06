@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos.features.artists.presentation.composables
+package com.example.jetpackcomposedemos.core.presentation
 
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField

@@ -1,4 +1,13 @@
 package com.example.jetpackcomposedemos.features.artists.data
 
-class ArtistDto {
+data class ArtistDto(
+    val id: Int,
+    val name: String,
+    val genre: String,
+    val location: String,
+    val imageUrl: String,
+    val description: String,
+    val tags: String
+)  {
+
 }
