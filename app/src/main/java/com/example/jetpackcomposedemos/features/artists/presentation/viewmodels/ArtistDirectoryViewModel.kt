@@ -3,7 +3,7 @@ package com.example.jetpackcomposedemos.features.artists.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
-import com.example.jetpackcomposedemos.features.artists.domain.GetAvailableArtistUseCase
+import com.example.jetpackcomposedemos.features.artists.domain.GetAvailableArtistsUseCase
 import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ArtistDirectoryViewModel @Inject constructor(
-    private val getAvailableArtists: GetAvailableArtistUseCase
+    private val getAvailableArtists: GetAvailableArtistsUseCase
 ): ViewModel() {
 
     // keep the actual mutable state value private

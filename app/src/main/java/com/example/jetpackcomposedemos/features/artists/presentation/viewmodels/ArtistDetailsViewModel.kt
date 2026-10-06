@@ -3,7 +3,7 @@ package com.example.jetpackcomposedemos.features.artists.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jetpackcomposedemos.core.LoadableState
-import com.example.jetpackcomposedemos.features.artists.data.GetArtistUseCase
+import com.example.jetpackcomposedemos.features.artists.domain.GetArtistUseCase
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 
 import dagger.hilt.android.lifecycle.HiltViewModel

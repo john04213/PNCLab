@@ -14,7 +14,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
-import com.pnc.jetpackcomposedemos.BoardMemberCard
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)

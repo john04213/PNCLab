@@ -1,7 +1,5 @@
-package com.example.jetpackcomposedemos.features.artists.data
+package com.example.jetpackcomposedemos.features.artists.domain
 
-import com.example.jetpackcomposedemos.features.artists.domain.Artist
-import com.example.jetpackcomposedemos.features.artists.domain.ArtistRepository
 import javax.inject.Inject
 
 class GetArtistUseCase @Inject constructor(

@@ -1,9 +1,13 @@
 package com.example.jetpackcomposedemos.features.artists.data
 
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
+@Singleton
+class HardCodedArtistDataSource @Inject constructor() : ArtistDataSource {
+
     override suspend fun getArtists(): List<ArtistDto> {
+
         return listOf(
             ArtistDto(
                 id = 100,
@@ -12,7 +16,7 @@ class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
                 location = "Los Angeles, CA",
                 imageUrl = "/images/highvoltage.jpg",
                 description = "This all-female classic rock/heavy metal band will get you up and moving.",
-                tags = ""
+                tags = "Heavy Rock,Party,Loud",
             ),
             ArtistDto(
                 id = 101,
@@ -21,7 +25,7 @@ class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
                 location = "Miami, FL",
                 imageUrl = "/images/selfiesim.jpg",
                 description = "A current pop group fronted by a dynamic female singer.",
-                tags = ""
+                tags = "Pop Music,Modern,Dance",
             ),
             ArtistDto(
                 id = 102,
@@ -30,7 +34,7 @@ class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
                 location = "New York, NY",
                 imageUrl = "/images/donna.jpg",
                 description = "A piano duo that has been entertaining audiences for over 12 years.",
-                tags = ""
+                tags = "Piano,Duo,Adult Contemporary",
             ),
             ArtistDto(
                 id = 105,
@@ -39,7 +43,7 @@ class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
                 location = "New York, NY",
                 imageUrl = "/images/CarlosDream.jpg",
                 description = "Described by Entertainment Weekly as 'Barry White meets Al Green', Carlos will enchant you with his romantic, soulful sound.",
-                tags = ""
+                tags = "Rock,Soul,Romance",
             ),
             ArtistDto(
                 id = 104,
@@ -48,7 +52,7 @@ class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
                 location = "New York, NY",
                 imageUrl = "/images/chandler.jpg",
                 description = "Joan's unique cultural and political viewpoint will have you laughing in your seat.",
-                tags = ""
+                tags = "Comedian,Political,Mature",
             ),
             ArtistDto(
                 id = 103,
@@ -57,8 +61,10 @@ class HardCodedArtistDataSource @Inject constructor(): ArtistDataSource {
                 location = "Chicago, IL",
                 imageUrl = "/images/marco.jpg",
                 description = "Family-friendly stage and street magic performed with a witty flair.",
-                tags = ""
+                tags = "Street Magic,Juggling,Unicycle",
             )
         )
+
     }
+
 }

@@ -204,7 +204,7 @@ fun CompactArtistDirectoryPreview(){
   )
 }
 @Preview(
-    name = "Compact View",
+    name = "Expanded View",
     widthDp = 900,
     heightDp = 844
 )
@@ -212,7 +212,7 @@ fun CompactArtistDirectoryPreview(){
 fun ExpandedArtistDirectoryPreview(){
     ArtistDirectory(
         state = ArtistDirectoryState(),
-        useTwoPaneLayout = false
+        useTwoPaneLayout = true
     )
 }
 

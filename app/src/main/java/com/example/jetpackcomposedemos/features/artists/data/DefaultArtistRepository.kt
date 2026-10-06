@@ -1,9 +1,11 @@
 package com.example.jetpackcomposedemos.features.artists.data
 
-import com.example.jetpackcomposedemos.features.artists.domain.ArtistRepository
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
+import com.example.jetpackcomposedemos.features.artists.domain.ArtistRepository
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DefaultArtistRepository @Inject constructor(
     private val dataSource: ArtistDataSource
 ): ArtistRepository {
@@ -11,7 +13,7 @@ class DefaultArtistRepository @Inject constructor(
     override suspend fun getArtists(): List<Artist> {
         return dataSource.getArtists().map {
             ArtistMapper.mapToDomain(it)
-            }
+        }
     }
 
     override suspend fun getArtist(id: Int): Artist? {
@@ -20,4 +22,7 @@ class DefaultArtistRepository @Inject constructor(
                 it.id == id
             }
     }
+
 }
+
+

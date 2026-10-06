@@ -76,7 +76,7 @@ fun LoginScreen(
             is LoginUiState.Success -> {
                 // cast uiState as LoginUiState.Success so we can get its user property
                 val user = (uiState as LoginUiState.Success).user
-                Text("Welome, ${user.username}!")
+                Text("Welcome, ${user.username}!")
                 LaunchedEffect(user) {
                     // LaunchedEffect lets us invoke possibly suspend function
                     // from a within a composable

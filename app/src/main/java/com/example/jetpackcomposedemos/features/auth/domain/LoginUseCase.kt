@@ -7,7 +7,7 @@ class LoginUseCase(
 ) {
     // using the invoke operator allows us to call the class as a function
     suspend operator fun invoke(userId: String, passcode: String): Result<User> {
-        if (userId.isBlank() && passcode.isBlank()) {
+        if (userId.isBlank() || passcode.isBlank()) {
             return Result.failure(IllegalArgumentException("Credentials cannot be empty"))
         }
         if (passcode.length < 5) {

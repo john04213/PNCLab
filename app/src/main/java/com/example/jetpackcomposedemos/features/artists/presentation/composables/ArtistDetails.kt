@@ -75,7 +75,7 @@ fun ArtistDetails(
         }
         is LoadableState.Error -> {
             val message = (state as LoadableState.Error).message
-            Text("Error: $message)",
+            Text("Error: $message",
             color = MaterialTheme.colorScheme.error
             )
         }
