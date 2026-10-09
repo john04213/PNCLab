@@ -1,4 +1,11 @@
 package com.example.jetpackcomposedemos.features.todo.domain
 
-class ToDo {
-}
+
+
+data class ToDo  (
+    val id: Int,
+    val title: String,
+    val completed: Boolean
+)
+
+

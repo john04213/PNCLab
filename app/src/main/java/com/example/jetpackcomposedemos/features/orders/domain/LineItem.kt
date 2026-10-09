@@ -1,4 +1,9 @@
 package com.example.jetpackcomposedemos.features.orders.domain
 
-class LineItem {
-}
+data class LineItem (
+    val id: Int,
+    val productName: String,
+    val orderQty: Int,
+    val unitPrice: Double,
+    val lineTotal: Double
+)

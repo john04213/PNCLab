@@ -1,6 +1,6 @@
 package com.example.jetpackcomposedemos.features.orders.domain
 
-interface OrderRespository {
+interface OrderRepository {
 
     suspend fun getOrders(): List<Order>
 

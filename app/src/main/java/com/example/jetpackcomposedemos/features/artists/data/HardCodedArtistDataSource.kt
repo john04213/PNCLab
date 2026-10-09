@@ -67,4 +67,8 @@ class HardCodedArtistDataSource @Inject constructor() : ArtistDataSource {
 
     }
 
+    override suspend fun getArtist(id: Int): ArtistDto? {
+        return getArtists().firstOrNull { it.id == id}
+    }
+
 }

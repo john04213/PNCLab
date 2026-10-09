@@ -1,4 +1,15 @@
 package com.example.jetpackcomposedemos.features.todo.domain
 
-class CreateToDoUseCase {
+import javax.inject.Inject
+import javax.inject.Singleton
+
+
+@Singleton
+class CreateToDoUseCase @Inject constructor (
+     private val toDoRepository: ToDoRepository
+) {
+    suspend operator fun invoke(todo: ToDo) {
+        toDoRepository.insert(todo)
+
+    }
 }

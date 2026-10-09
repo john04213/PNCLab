@@ -9,7 +9,7 @@ data class ArtistDirectoryState (
     val showFilter: Boolean = false,
     val selectedArtistId: Int? = null
 ){
-    val displayedArtist: List<Artist>
+    val displayedArtists: List<Artist>
         get() = artists.filter {
             (genreFilter == "" || it.genre.contains(genreFilter, ignoreCase = true)) &&
                     (locationFilter == "" || it.location.contains(locationFilter, ignoreCase = true))

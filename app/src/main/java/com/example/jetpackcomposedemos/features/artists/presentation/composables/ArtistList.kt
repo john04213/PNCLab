@@ -22,7 +22,7 @@ fun ArtistList(
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(
             items = artists,

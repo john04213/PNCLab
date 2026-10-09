@@ -12,7 +12,7 @@ class LoginViewModel(
     private val loginUseCase: LoginUseCase = LoginUseCase(),
 ): ViewModel() {
 
-    private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.idle)
+    private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
 
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 

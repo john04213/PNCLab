@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,24 +55,24 @@ fun LoginScreen(
             onValueChange = { userId = it },
             label = { Text("User ID") }
         )
-        Spacer(modifier=Modifier.padding(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = passcode,
             onValueChange = { passcode = it },
             label = { Text("Passcode") },
             visualTransformation = PasswordVisualTransformation()
         )
-        Spacer(modifier=Modifier.padding(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             viewModel.login(userId, passcode)
         }) {
             Text("Login")
         }
 
-        Spacer(modifier=Modifier.padding(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         when(uiState) {
-            is LoginUiState.idle -> {}
+            is LoginUiState.Idle -> {}
             is LoginUiState.Loading -> CircularProgressIndicator()
             is LoginUiState.Success -> {
                 // cast uiState as LoginUiState.Success so we can get its user property

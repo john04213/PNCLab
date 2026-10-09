@@ -4,7 +4,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class GetToDoUseCase @Inject constructor(
+class GetToDosUseCase @Inject constructor(
     private val toDoRepository: ToDoRepository
 ){
 

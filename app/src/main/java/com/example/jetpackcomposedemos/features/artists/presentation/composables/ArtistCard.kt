@@ -44,16 +44,16 @@ fun ArtistCard(artist: Artist,
     )
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
+            .fillMaxWidth(),
         onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
         shape = MaterialTheme.shapes.medium
-
     ) {
-        Column{
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             IconToggleButton(
                 checked = isFavorite,
                 onCheckedChange = {
@@ -78,8 +78,7 @@ fun ArtistCard(artist: Artist,
             }
             Text(
                 text = artist.name,
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(16.dp)
+                style = MaterialTheme.typography.titleMedium
             )
             Text("Genre: ${artist.genre}")
             Text("Location: ${artist.location}")

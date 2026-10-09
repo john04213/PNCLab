@@ -1,4 +1,15 @@
 package com.example.jetpackcomposedemos.features.orders.domain
 
-class GetOrdersUseCase {
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class GetOrdersUseCase @Inject constructor(
+    private val orderRepository: OrderRepository
+)  {
+    suspend operator fun invoke(): List<Order> {
+        return orderRepository
+            .getOrders()
+            .sortedByDescending {it.orderDate}
+    }
 }

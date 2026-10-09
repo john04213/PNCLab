@@ -7,13 +7,13 @@ import androidx.compose.runtime.Composable
 @Composable
 fun TextFilter(
     label: String,
-    Filter: String,
+    filter: String,
     onFilterChange: (String) -> Unit,
 
 
 ){
     TextField(
-        value = Filter,
+        value = filter,
         onValueChange = onFilterChange,
         label = {
             Text("$label:")

@@ -1,5 +1,6 @@
 package com.example.jetpackcomposedemos.core
 
+import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
@@ -21,11 +22,15 @@ import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
 import com.example.jetpackcomposedemos.features.boardmembers.presentation.BoardMemberDetails
 import com.example.jetpackcomposedemos.features.boardmembers.presentation.BoardMemberList
 import com.example.jetpackcomposedemos.legacy.LegacyArtistList
+import com.example.jetpackcomposedemos.BuildConfig
+import com.example.jetpackcomposedemos.features.orders.presentation.OrdersScreen
+import com.example.jetpackcomposedemos.features.todo.presentation.ToDosScreen
 
 @Composable
 fun EventPlannerApp(
     viewModel: AuthViewModel = viewModel()
 ){
+
     val authState by viewModel.uiState.collectAsState()
 
     val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
@@ -58,8 +63,11 @@ fun EventPlannerApp(
                         onViewBoardMembers = {
                             navController.navigate(BoardMemberListRoute)
                         },
-                        onLegacyArtists = {
-                            navController.navigate(LegacyArtistListRoute)
+                        onViewOrders = {
+                            navController.navigate(OrdersRoute)
+                        },
+                        onViewToDos = {
+                            navController.navigate(ToDosRoute)
                         }
                     )
                 }
@@ -111,14 +119,15 @@ fun EventPlannerApp(
 
                 }
 
-//                composable<LegacyArtistListRoute> {
-//                    LegacyArtistList(
-//                        artists = artists,
-//                        onArtistSelected = { artistId ->
-//                            navController.navigate(ArtistDetailsRoute(artistId))
-//                        }
-//                    )
-//                }
+                composable<OrdersRoute> {
+                    OrdersScreen(useTwoPaneLayout = useTwoPaneLayout)
+                }
+
+                composable<ToDosRoute> {
+                    ToDosScreen(
+                        useTwoPaneLayout = useTwoPaneLayout
+                    )
+                }
 
             }
         }

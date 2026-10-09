@@ -17,10 +17,9 @@ class DefaultArtistRepository @Inject constructor(
     }
 
     override suspend fun getArtist(id: Int): Artist? {
-        return getArtists()
-            .firstOrNull {
-                it.id == id
-            }
+        val dto = dataSource.getArtist(id) ?: return null
+        return ArtistMapper.mapToDomain(dto)
+
     }
 
 }

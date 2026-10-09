@@ -67,7 +67,7 @@ fun ArtistDirectory(
                 }
             )
                 Text(
-                    text = "Displaying ${state.displayedArtist.size} artists",
+                    text = "Displaying ${state.displayedArtists.size} artists",
                     modifier = Modifier.padding(0.dp,12.dp)
                 )
             }
@@ -94,7 +94,7 @@ fun ArtistDirectory(
             ){
                 Box( modifier = Modifier.weight(1f)){
                     ArtistList(
-                        artists = state.displayedArtist,
+                        artists = state.displayedArtists,
                         onArtistSelected = onArtistSelected,
                         innerPadding = PaddingValues(0.dp)
                     )
@@ -125,7 +125,7 @@ fun ArtistDirectory(
 
         } else {
             ArtistList(
-                artists = state.displayedArtist,
+                artists = state.displayedArtists,
                 onArtistSelected = onArtistSelected,
                 innerPadding = innerPadding
             )
@@ -149,13 +149,13 @@ fun ArtistDirectory(
                     )
                     TextFilter(
                         label = "Genre",
-                        Filter = state.genreFilter,
+                        filter = state.genreFilter,
                         onFilterChange = onGenreChange
 
                     )
                     TextFilter(
                         label = "Location",
-                        Filter = state.locationFilter,
+                        filter = state.locationFilter,
                         onFilterChange = onLocationChange
                     )
                     Row(
