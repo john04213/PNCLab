@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,13 +25,18 @@ class OrdersViewModel @Inject constructor(
     val uiState: StateFlow<LoadableState<List<Order>>> = _uiState.asStateFlow()
 
     fun loadData() {
+        _uiState.value = LoadableState.Loading
         viewModelScope.launch {
             try {
                 val orders = getOrders()
                 _uiState.value = LoadableState.Success(orders)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = LoadableState.Error(e.message ?: "Unknown error")
             }
+
         }
     }
 }
+

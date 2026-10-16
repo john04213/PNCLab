@@ -10,7 +10,7 @@ kotlin = "2.4.10"
 composeBom = "2026.02.01"
 coilVersion = "3.6.3"
 navigationCompose = "2.10.2"
-kotlinxSerializationJson = "1.7.3"
+kotlinxSerializationJson = "1.8.1"
 recyclerview = "1.4.0"
 animation = "1.12.1"
 lifecycle = "2.11.0"
@@ -19,6 +19,9 @@ retrofitVersion = "3.0.0"
 okhttpVersion = "5.5.0"
 roomversion = "2.8.5"
 material3 = "1.4.0"
+runner = "1.7.0"
+uiTest = "1.12.1"
+
 
 
 [libraries]
@@ -58,7 +61,14 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-compiler = { group = "androidx.room", name= "room-compiler", version.ref = "roomversion"}
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomversion" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version = "1.11.0" }
+turbine = { group = "app.cash.turbine", name = "turbine", version = "1.2.1" }
+espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoCore" }
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hiltVersion" }
+room-testing = { group = "androidx.room", name = "room-testing", version.ref = "roomversion" }
+kotlinx-coroutines-bom = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-bom", version = "1.11.0" }
+androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
+androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitVersion" }
 
 [bundles]
 coil = [ "coil-compose", "coil-loader" ]

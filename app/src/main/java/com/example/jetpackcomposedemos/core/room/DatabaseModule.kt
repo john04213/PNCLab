@@ -2,6 +2,7 @@ package com.example.jetpackcomposedemos.core.room
 
 import android.content.Context
 import androidx.room.Room
+import com.example.jetpackcomposedemos.features.artists.data.local.ArtistDao
 import com.example.jetpackcomposedemos.features.orders.data.local.OrderDao
 import com.example.jetpackcomposedemos.features.todo.data.ToDoDao
 import dagger.Module
@@ -36,5 +37,11 @@ class DatabaseModule {
     @Singleton
     fun provideOrderDao(database: AppDatabase): OrderDao {
         return database.orderDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideArtistDao(database: AppDatabase): ArtistDao {
+        return database.artistDao()
     }
 }

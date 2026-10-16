@@ -64,7 +64,7 @@ fun ArtistCard(artist: Artist,
                     painter = painterResource(
                         id = if(isFavorite) R.drawable.filled_star else R.drawable.outline_star
                     ),
-                    contentDescription = if(isFavorite) "Favorite" else "Not Favorite",
+                    contentDescription = if(isFavorite) "Favorite" else "Not favorite",
                     tint = if(isFavorite)
                         MaterialTheme.colorScheme.primary
                     else

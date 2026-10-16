@@ -3,6 +3,7 @@ package com.example.jetpackcomposedemos.core
 import com.example.jetpackcomposedemos.features.artists.data.ArtistDataSource
 import com.example.jetpackcomposedemos.features.artists.data.DefaultArtistRepository
 import com.example.jetpackcomposedemos.features.artists.data.HardCodedArtistDataSource
+import com.example.jetpackcomposedemos.features.artists.data.OfflineFirstArtistRepository
 import com.example.jetpackcomposedemos.features.artists.data.RandomArtistDataSource
 import com.example.jetpackcomposedemos.features.artists.domain.ArtistRepository
 import com.example.jetpackcomposedemos.features.orders.data.DefaultOrderRepository
@@ -33,7 +34,7 @@ abstract class AppInjectionModule {
 
     @Binds
     abstract fun bindArtistRepository(
-        implementation: DefaultArtistRepository
+        implementation: OfflineFirstArtistRepository
     ): ArtistRepository
 
 

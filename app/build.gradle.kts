@@ -24,7 +24,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.example.jetpackcomposedemos.testutil.HiltTestRunner"
         buildConfigField("String", "BASE_URL", "\"https://kazoopromotions.com/api/\"")
         buildConfigField("String", "AW_BASE_URL", "\"https://api.bootcampcentral.com/api/\"")
     }
@@ -45,6 +45,12 @@ android {
         viewBinding = true
         buildConfig = true
     }
+
+    sourceSets {
+        getByName("androidTest"){
+            assets.directories.add("schemas")
+        }
+    }
 }
 
 dependencies {
@@ -59,6 +65,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.recyclerview)
+    androidTestImplementation(libs.androidx.runner)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -81,4 +88,18 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    androidTestImplementation(libs.espresso.contrib)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.room.testing)
+    implementation(platform(libs.kotlinx.coroutines.bom))
+    testImplementation(platform(libs.kotlinx.coroutines.bom))
+    androidTestImplementation(platform(libs.kotlinx.coroutines.bom))
+    androidTestImplementation(libs.turbine)
+    androidTestImplementation(libs.androidx.junit.ktx)
 }

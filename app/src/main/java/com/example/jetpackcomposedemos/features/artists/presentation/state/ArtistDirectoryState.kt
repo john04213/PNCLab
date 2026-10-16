@@ -7,7 +7,9 @@ data class ArtistDirectoryState (
     val genreFilter: String = "",
     val locationFilter: String = "",
     val showFilter: Boolean = false,
-    val selectedArtistId: Int? = null
+    val selectedArtistId: Int? = null,
+    val isRefreshing: Boolean = false,
+    val errorMessage: String? = null
 ){
     val displayedArtists: List<Artist>
         get() = artists.filter {

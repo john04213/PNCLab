@@ -8,6 +8,8 @@ import com.example.jetpackcomposedemos.features.todo.data.ToDoDao
 import com.example.jetpackcomposedemos.features.todo.data.ToDoEntity
 import androidx.room.Room
 import androidx.room.TypeConverters
+import com.example.jetpackcomposedemos.features.artists.data.local.ArtistDao
+import com.example.jetpackcomposedemos.features.artists.data.local.ArtistEntity
 import com.example.jetpackcomposedemos.features.orders.data.local.OrderEntity
 import com.example.jetpackcomposedemos.features.orders.data.local.LineItemEntity
 import com.example.jetpackcomposedemos.features.orders.data.local.OrderDao
@@ -16,17 +18,21 @@ import com.example.jetpackcomposedemos.features.orders.data.local.OrderDao
     entities = [
         ToDoEntity::class,
         OrderEntity::class,
-        LineItemEntity::class],
-    version = 2,
+        LineItemEntity::class,
+        ArtistEntity::class],
+    version = 3,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 1, to = 2)
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3)
     ]
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase: RoomDatabase() {
     abstract fun toDoDao(): ToDoDao
     abstract fun orderDao(): OrderDao
+
+    abstract fun artistDao(): ArtistDao
 
     companion object {
         @Volatile // don't let background threads cache the null value

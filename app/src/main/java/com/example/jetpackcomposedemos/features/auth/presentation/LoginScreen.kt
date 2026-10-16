@@ -34,66 +34,11 @@ fun LoginScreen(
 
     val uiState by viewModel.uiState.collectAsState()
 
-    var userId by remember{
-        mutableStateOf("")
-    }
-
-    var passcode by remember{
-        mutableStateOf("")
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        OutlinedTextField(
-            value = userId,
-            onValueChange = { userId = it },
-            label = { Text("User ID") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = passcode,
-            onValueChange = { passcode = it },
-            label = { Text("Passcode") },
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = {
-            viewModel.login(userId, passcode)
-        }) {
-            Text("Login")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        when(uiState) {
-            is LoginUiState.Idle -> {}
-            is LoginUiState.Loading -> CircularProgressIndicator()
-            is LoginUiState.Success -> {
-                // cast uiState as LoginUiState.Success so we can get its user property
-                val user = (uiState as LoginUiState.Success).user
-                Text("Welcome, ${user.username}!")
-                LaunchedEffect(user) {
-                    // LaunchedEffect lets us invoke possibly suspend function
-                    // from a within a composable
-                    onLoginSuccess(user)
-                }
-            }
-
-            is LoginUiState.Error -> {
-                Text(
-                    "Error: ${(uiState as LoginUiState.Error).message}",
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-        }
-    }
+    LoginContent(
+        uiState = uiState,
+        onLogin = viewModel::login,
+        onLoginSuccess = onLoginSuccess
+    )
 
 }
 

@@ -1,5 +1,8 @@
 package com.example.jetpackcomposedemos.features.artists.domain
 
+import kotlinx.coroutines.flow.Flow
+
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -8,11 +11,15 @@ class GetAvailableArtistsUseCase @Inject constructor(
     private val artistRepository: ArtistRepository
 ) {
 
-    suspend operator fun invoke(): List<Artist> {
+     operator fun invoke(): Flow<List<Artist>> {
         return artistRepository
-            .getArtists()
-            .filter { it.isAvailable }
-            .sortedBy { it.name }
+            .observeArtists()
+            .map { artists ->
+                artists
+                .filter { it.isAvailable }
+                .sortedBy { it.name }
+            }
+
     }
 
 }
