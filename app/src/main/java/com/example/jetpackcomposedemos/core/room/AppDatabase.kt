@@ -3,23 +3,24 @@ package com.example.jetpackcomposedemos.core.room
 import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.Database
-import androidx.room.RoomDatabase
-import com.example.jetpackcomposedemos.features.todo.data.ToDoDao
-import com.example.jetpackcomposedemos.features.todo.data.ToDoEntity
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.jetpackcomposedemos.features.artists.data.local.ArtistDao
 import com.example.jetpackcomposedemos.features.artists.data.local.ArtistEntity
-import com.example.jetpackcomposedemos.features.orders.data.local.OrderEntity
+import com.example.jetpackcomposedemos.features.todo.data.ToDoDao
+import com.example.jetpackcomposedemos.features.todo.data.ToDoEntity
 import com.example.jetpackcomposedemos.features.orders.data.local.LineItemEntity
 import com.example.jetpackcomposedemos.features.orders.data.local.OrderDao
+import com.example.jetpackcomposedemos.features.orders.data.local.OrderEntity
 
 @Database(
     entities = [
         ToDoEntity::class,
         OrderEntity::class,
         LineItemEntity::class,
-        ArtistEntity::class],
+        ArtistEntity::class
+        ],
     version = 3,
     exportSchema = true,
     autoMigrations = [
@@ -29,22 +30,22 @@ import com.example.jetpackcomposedemos.features.orders.data.local.OrderDao
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase: RoomDatabase() {
+
     abstract fun toDoDao(): ToDoDao
     abstract fun orderDao(): OrderDao
-
     abstract fun artistDao(): ArtistDao
 
     companion object {
-        @Volatile // don't let background threads cache the null value
+        @Volatile   // don't let background threads cache the null value
         private var INSTANCE: AppDatabase? = null
 
-        fun getDataBase(context: Context): AppDatabase {
+        fun getDatabase(context: Context): AppDatabase {
             // fetch or create the database
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "app.database"
+                    "app_database"
                 ).build()
                 INSTANCE = instance
                 instance
@@ -52,3 +53,5 @@ abstract class AppDatabase: RoomDatabase() {
         }
     }
 }
+
+

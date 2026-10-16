@@ -15,18 +15,16 @@ import com.example.jetpackcomposedemos.features.todo.domain.ToDo
 fun ToDosScreen(
     useTwoPaneLayout: Boolean,
     viewModel: ToDosViewModel = hiltViewModel()
-){
+) {
     val uiState by viewModel.uiState.collectAsState()
 
-
-    //runs the screen only once when the composable is created
     LaunchedEffect(Unit) {
         viewModel.loadToDos()
     }
 
     when (uiState) {
         is LoadableState.Loading -> CircularProgressIndicator()
-        is LoadableState.Empty -> Text("No todos found")
+        is LoadableState.Empty -> Text("No to-dos")
         is LoadableState.Error -> {
             val errorMessage = (uiState as LoadableState.Error).message
             Text(
@@ -43,10 +41,12 @@ fun ToDosScreen(
                     viewModel.createToDo(item)
                 },
                 onToggleCompleted = { item: ToDo ->
-                    viewModel.toggleCompleted( item)
+                    viewModel.toggleCompleted(item)
                 }
             )
         }
-
     }
+
 }
+
+

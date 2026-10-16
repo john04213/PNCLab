@@ -19,7 +19,6 @@ fun OrderLines(
 ) {
     val formatter = NumberFormat.getCurrencyInstance(Locale.US)
 
-
     Grid(
         modifier = Modifier.padding(4.dp),
         config = {
@@ -40,5 +39,9 @@ fun OrderLines(
             Text(formatter.format(item.unitPrice))
             Text(formatter.format(item.lineTotal))
         }
+
     }
+
 }
+
+

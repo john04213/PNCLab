@@ -28,15 +28,13 @@ import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
 @Composable
 fun ArtistDetails(
-   artistId: Int,
-   viewModel: ArtistDetailsViewModel = hiltViewModel()
-
-){
-
+    artistId: Int,
+    viewModel: ArtistDetailsViewModel = hiltViewModel()
+) {
     val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(artistId) {
-        viewModel.loadArtist((artistId))
+        viewModel.loadArtist(artistId)
     }
 
     when (state) {
@@ -75,26 +73,33 @@ fun ArtistDetails(
         }
         is LoadableState.Error -> {
             val message = (state as LoadableState.Error).message
-            Text("Error: $message",
-            color = MaterialTheme.colorScheme.error
-            )
+            Text(
+                "Error: $message",
+                color = MaterialTheme.colorScheme.error
+                )
         }
     }
+
+
 }
 
-//@Preview(showBackground = true)
+//@Preview(showBackground = false)
 //@Composable
-//fun ArtistDetailsPreview(){
-//        val artist = Artist(
-//            id = 100,
-//            name = "High Voltage",
-//            genre = "Rock",
-//            location = "Los Angeles, CA",
-//            imageUrl = "/images/highvoltage.jpg",
-//            description = "This all-female classic rock/heavy metal band will get you up and moving.",
-//            tags = "Heavy Rock,Party,Loud",
-//        )
+//fun ArtistDetailsPreview() {
+//    val artist = Artist(
+//        id = 100,
+//        name = "High Voltage",
+//        genre = "Rock",
+//        location = "Los Angeles, CA",
+//        imageUrl = "/images/highvoltage.jpg",
+//        description = "This all-female classic rock/heavy metal band will get you up and moving.",
+//        tags = "Heavy Rock,Party,Loud",
+//    )
+//
 //    JetpackComposeDemosTheme {
-//        ArtistDetails(artist = artist)
+//        ArtistDetails(
+//            artist = artist
+//        )
 //    }
 //}
+

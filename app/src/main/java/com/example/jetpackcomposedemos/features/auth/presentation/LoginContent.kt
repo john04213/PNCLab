@@ -23,76 +23,74 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.jetpackcomposedemos.features.auth.domain.User
 
-
 @Composable
 fun LoginContent(
     uiState: LoginUiState,
     onLogin: (String, String) -> Unit,
     onLoginSuccess: (User) -> Unit = {}
 ) {
-    var userId by remember{
+
+    var userId by remember {
         mutableStateOf("")
     }
-
-    var passcode by remember{
+    var passcode by remember {
         mutableStateOf("")
     }
 
     val canLogin = userId.isNotBlank() && passcode.isNotBlank()
 
-
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         OutlinedTextField(
             value = userId,
             onValueChange = { userId = it },
-            label = { Text("User ID") }
+            label = { Text("User ID")}
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = passcode,
             onValueChange = { passcode = it },
-            label = { Text("Passcode") },
+            label = { Text("Passcode")},
             visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = {
-            onLogin(userId, passcode)
-        },
-            enabled = canLogin) {
+        Button(
+            onClick = {
+                onLogin(userId, passcode)
+            },
+            enabled = canLogin
+        ) {
             Text("Login")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        when(uiState) {
+        when (uiState) {
             is LoginUiState.Idle -> {}
             is LoginUiState.Loading -> CircularProgressIndicator()
             is LoginUiState.Success -> {
-                // cast uiState as LoginUiState.Success so we can get its user property
-                val user = (uiState as LoginUiState.Success).user
+
+                val user = uiState.user
+
                 Text("Welcome, ${user.username}")
                 LaunchedEffect(user) {
-                    // LaunchedEffect lets us invoke possibly suspend function
-                    // from a within a composable
+                    // LaunchedEffect lets us invoke possibly suspend functions
+                    // from within a composable
                     onLoginSuccess(user)
                 }
             }
-
             is LoginUiState.Error -> {
                 Text(
-                    "Error: ${(uiState as LoginUiState.Error).message}",
+                    "Error: ${uiState.message}",
                     color = MaterialTheme.colorScheme.error
                 )
             }
-
         }
     }
 
 }
+

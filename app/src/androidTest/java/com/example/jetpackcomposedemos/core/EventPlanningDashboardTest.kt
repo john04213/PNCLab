@@ -20,61 +20,73 @@ class EventPlanningDashboardTest {
     private val calls = mutableListOf<String>()
 
     @Before
-    fun setUp(){
-        //render the composable being tested
-        composeRule.setContent{
-            KazooTheme {
+    fun setUp() {
+        // render the composable being tested
+        composeRule.setContent {
+            KazooTheme() {
                 EventPlanningDashboard(
-                    onViewArtists = { calls.add("onViewArtists") },
-                    onViewBoardMembers = { calls.add("onViewBoardMembers") },
-                    onViewOrders = { calls.add("onViewOrders") },
-                    onViewToDos = { calls.add("onViewToDos") }
+                    onViewArtists = { calls.add("artists") },
+                    onViewBoardMembers = { calls.add("board members") },
+                    onViewOrders = { calls.add("orders") },
+                    onViewToDos = { calls.add("todos") }
                 )
             }
         }
     }
+
+
     @Test
     fun givenDashboard_whenShown_thenDisplaysTitle() {
+
         composeRule.onNode(hasTestTag("dashboard-title")).assertIsDisplayed()
+
     }
+
     @Test
-    fun givenDashboard_whenShown_thenDisplaysAllFourButtons(){
+    fun givenDashboard_whenShown_thenDisplaysAllFourButtons() {
         listOf(
-            "view-artists-button",
-            "view-board-members-button",
+            "view-artist-button",
+            "view-board-button",
             "view-orders-button",
-            "view-todos-button"
+            "view-todo-button"
         ).forEach { label ->
             composeRule.onNode(hasTestTag(label)).assertIsDisplayed()
         }
     }
 
     @Test
-    fun givenDashboard_whenViewArtistsTapped_thenOnViewArtistsIsCalled(){
-        composeRule.onNode(hasTestTag("view-artists-button")).performClick()
-        assertEquals(listOf("onViewArtists"), calls)
+    fun givenDashboard_whenViewArtistsTapped_thenOnViewArtistsIsCalled() {
+
+        composeRule.onNode(hasTestTag("view-artist-button")).performClick()
+
+        assertEquals(listOf("artists"), calls)
     }
 
     @Test
-    fun givenDashBoard_whenEachButtonIsTapped_thenOnlyItsOwnCallbackIsCalled(){
+    fun givenDashboard_whenEachButtonIsTapped_thenOnlyItsOwnCallbackIsCalled() {
         val expectations = mapOf(
-            "view-artists-button" to "onViewArtists",
-            "view-board-members-button" to "onViewBoardMembers",
-            "view-orders-button" to "onViewOrders",
-            "view-todos-button" to "onViewToDos"
-
+            "view-artists-button" to "artists",
+            "view-board-button" to "board members",
+            "view-orders-button" to "orders",
+            "view-todo-button" to "todos"
         )
+
         expectations.forEach { (label, expectedCall) ->
             calls.clear()
             composeRule.onNode(hasTestTag(label)).performClick()
-            assertEquals("tapping $label",listOf(expectedCall), calls)
+            assertEquals("tapping $label", listOf(expectedCall), calls)
         }
+
     }
 
     @Test
-    fun givenDashboard_whenNothingTapped_thenNoCallbacksAreCalled(){
+    fun givenDashboard_whenNothingTapped_thenNoCallbacksAreCalled() {
+
         composeRule.waitForIdle()
+
         assertEquals(emptyList<String>(), calls)
     }
+
 }
+
 

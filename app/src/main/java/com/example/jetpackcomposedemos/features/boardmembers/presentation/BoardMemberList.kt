@@ -15,32 +15,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun BoardMemberList(
     members: List<BoardMember>,
     onMemberSelected: (Int) -> Unit,
     onBack: () -> Unit
-) {Scaffold(
-topBar = {
-    TopAppBar(
-        title = {
-            Text("Board Members")
-        },
-        navigationIcon = {
-            IconButton(onClick = onBack){
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Return to dashboard"
-                )
-            }
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Kazoo Board of Directors")
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Return to dashboard"
+                        )
+                    }
+                }
+            )
         }
-    )
-} ){ Column(
+    ) {
+        Column(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            members.forEach {member ->
+            members.forEach { member ->
                 BoardMemberCard(
                     member = member,
                     onClick = {
@@ -51,6 +54,3 @@ topBar = {
         }
     }
 }
-
-
-

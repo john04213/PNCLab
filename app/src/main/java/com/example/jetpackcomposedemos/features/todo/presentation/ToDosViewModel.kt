@@ -14,35 +14,28 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 @HiltViewModel
-class ToDosViewModel @Inject constructor (
-
+class ToDosViewModel @Inject constructor(
     private val getToDos: GetToDosUseCase,
     private val createToDo: CreateToDoUseCase,
     private val updateToDo: UpdateToDoUseCase
-
 ): ViewModel() {
 
-    private val _uiState: MutableStateFlow<LoadableState<List<ToDo>>> = MutableStateFlow(LoadableState.Loading)
+    private val _uiState: MutableStateFlow<LoadableState<List<ToDo>>> =
+        MutableStateFlow(LoadableState.Loading)
 
     val uiState: StateFlow<LoadableState<List<ToDo>>> = _uiState.asStateFlow()
 
-
-    fun loadToDos(){
+    fun loadToDos() {
         viewModelScope.launch {
             _uiState.value = LoadableState.Success(getToDos())
         }
     }
 
     fun createToDo(title: String) {
-        if(title.isNotEmpty()) {
+        if (title.isNotEmpty()) {
             viewModelScope.launch {
-                createToDo(ToDo(
-                    id = 0,
-                    title = title,
-                    completed = false
-                ))
+                createToDo(ToDo(0, title, false))
                 loadToDos()
             }
         }
@@ -54,4 +47,6 @@ class ToDosViewModel @Inject constructor (
             loadToDos()
         }
     }
+
 }
+

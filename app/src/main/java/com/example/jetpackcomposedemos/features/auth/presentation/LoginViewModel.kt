@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val loginUseCase: LoginUseCase = LoginUseCase(),
+    private val loginUseCase: LoginUseCase = LoginUseCase()
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
@@ -18,22 +18,22 @@ class LoginViewModel(
 
     fun login(userId: String, passcode: String) {
 
-        // inherited viewModelScope from ViewModel
-        // (This allows us to have launch suspendable things from a non-suspendable function)
+        // we inherited viewModelScope from ViewModel
+        // (this allows us to launch suspendable things from a non-suspendable function)
         viewModelScope.launch {
-        _uiState.value = LoginUiState.Loading
+            _uiState.value = LoginUiState.Loading
 
-            // execute out use case
+            // execute our use case
             loginUseCase(userId, passcode)
                 .onSuccess { user ->
                     _uiState.value = LoginUiState.Success(user)
-
                 }
                 .onFailure { error ->
                     _uiState.value = LoginUiState.Error(error.message ?: "Unknown error")
                 }
-
         }
 
     }
+
+
 }

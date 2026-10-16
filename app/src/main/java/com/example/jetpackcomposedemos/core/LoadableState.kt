@@ -1,7 +1,7 @@
 package com.example.jetpackcomposedemos.core
 
 sealed interface LoadableState<out T> {
-    data object Loading : LoadableState<Nothing>
+    data object Loading: LoadableState<Nothing>
     data object Empty: LoadableState<Nothing>
     data class Success<T>(
         val data: T
@@ -10,3 +10,5 @@ sealed interface LoadableState<out T> {
         val message: String
     ): LoadableState<Nothing>
 }
+
+

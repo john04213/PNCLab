@@ -17,10 +17,11 @@ class AppDatabaseMigrationTest {
         AppDatabase::class.java
     )
 
-    // ---------------- test migrating from version 1 to version 2 ----------------
+    // ----------- test migrating from version 1 to version 2
     @Test
-    fun migrate1to2_keepsExistingToDosAndAddsTheOrderTable() {
-        helper.createDatabase(testDbName,1).apply {
+    fun migrate1To2_keepsExistingToDosAndAddsTheOrderTables() {
+
+        helper.createDatabase(testDbName, 1).apply {
             execSQL("INSERT INTO todo (id, title, completed) VALUES (1, 'Buy milk', 0)")
             close()
         }
@@ -42,17 +43,21 @@ class AppDatabaseMigrationTest {
             cursor.moveToFirst()
             assertEquals(0, cursor.getInt(0))
         }
+
     }
 
     @Test
     fun migrate2To3_keepsOrdersAndAddsTheArtistsTable() {
+
         helper.createDatabase(testDbName, 2).apply {
             execSQL("INSERT INTO orders (id, customerId, firstName, lastName, orderDate, shipDate) " +
-                    "VALUES (1, 100, 'Ada', 'Lovelace', 1704067200000, 1704240000000)"
+            "VALUES (1, 100, 'Ada', 'Lovelace', 1704067200000, 1704240000000)"
             )
             close()
         }
+
         val db = helper.runMigrationsAndValidate(testDbName, 3, true)
+
         db.query("SELECT firstName FROM orders WHERE id = 1").use { cursor ->
             assertTrue(cursor.moveToFirst())
             assertEquals("Ada", cursor.getString(0))
@@ -61,5 +66,14 @@ class AppDatabaseMigrationTest {
             cursor.moveToFirst()
             assertEquals(0, cursor.getInt(0))
         }
+
     }
+
+
+
+
 }
+
+
+
+

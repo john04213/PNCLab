@@ -31,34 +31,35 @@ annotation class ApplicationScope
 abstract class AppInjectionModule {
 
 
-
     @Binds
     abstract fun bindArtistRepository(
         implementation: OfflineFirstArtistRepository
     ): ArtistRepository
 
-
     @Binds
-    abstract fun bindOrderRepository(
+    abstract fun bindOrdersRepository(
         implementation: LocalOnlyOrderRepository
-        ): OrderRepository
+    ): OrderRepository
 
     @Binds
-    abstract fun bindTodoRepository(
+    abstract fun bindToDoRepository(
         implementation: DefaultToDoRepository
     ): ToDoRepository
 
 
     companion object {
+
         @Provides
         @Singleton
         @ApplicationScope
         fun provideAppScope(): CoroutineScope {
             return CoroutineScope(SupervisorJob() + Dispatchers.Default)
-            // NOTE using SupervisorJob keeps one failed child from
+            // NOTE: using SupervisorJob keeps one failed child from
             // cancelling the scope for everyone else
         }
+
     }
+
 }
 
 

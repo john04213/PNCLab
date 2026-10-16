@@ -26,12 +26,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.jetpackcomposedemos.features.auth.domain.User
 
 @Composable
-
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
     onLoginSuccess: (User) -> Unit = {}
 ) {
-
     val uiState by viewModel.uiState.collectAsState()
 
     LoginContent(
@@ -41,4 +39,10 @@ fun LoginScreen(
     )
 
 }
+
+
+
+
+
+
 

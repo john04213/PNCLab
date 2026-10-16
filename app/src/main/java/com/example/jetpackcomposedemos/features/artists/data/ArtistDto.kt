@@ -8,6 +8,5 @@ data class ArtistDto(
     val imageUrl: String,
     val description: String,
     val tags: String
-)  {
+)
 
-}

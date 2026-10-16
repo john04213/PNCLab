@@ -12,6 +12,7 @@ import com.example.jetpackcomposedemos.ui.theme.KazooTheme
 import junit.framework.TestCase.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.junit.experimental.theories.suppliers.TestedOn
 
 class ArtistCardTest {
 
@@ -27,9 +28,9 @@ class ArtistCardTest {
 
     private var clickCount = 0
 
-    private fun setCard(){
+    private fun setCard() {
         composeRule.setContent {
-            KazooTheme{
+            KazooTheme {
                 ArtistCard(
                     artist = artist,
                     onClick = { clickCount++ }
@@ -39,14 +40,14 @@ class ArtistCardTest {
     }
 
 //    @Test
-//    fun explore_printSemanticsTrees(){
+//    fun explore_printSemanticsTrees() {
 //        setCard()
-//        composeRule.onRoot().printToLog("Artist_Card_Merges")
-//        composeRule.onRoot(useUnmergedTree = true).printToLog("Artist_Card_Unmerged")
+//        composeRule.onRoot().printToLog("ARTIST_CARD_MERGED")
+//        composeRule.onRoot(useUnmergedTree = true).printToLog("ARTIST_CARD_UNMERGED")
 //    }
 
     @Test
-    fun givenArtist_whenShown_thenDisplaysNameGenreLocationAndDescription(){
+    fun givenArtist_whenShown_thenDisplaysNameGenreLocation() {
         setCard()
 
         composeRule.onNodeWithText(artist.name, useUnmergedTree = true).assertIsDisplayed()
@@ -55,39 +56,45 @@ class ArtistCardTest {
     }
 
     @Test
-    fun givenCard_whenTapped_thenOnClickedIsCalledOnce(){
+    fun givenCard_whenTapped_thenOnClickIsCalledOnce() {
 
         setCard()
 
         composeRule.onNodeWithText(artist.name, useUnmergedTree = true).performClick()
+
         assertEquals(1, clickCount)
     }
-
 
     @Test
     fun givenNotFavorite_whenStarTapped_thenBecomesFavorite() {
         setCard()
 
-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+            .performClick()
 
-        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true).assertIsDisplayed()
-
-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+            .assertDoesNotExist()
     }
 
     @Test
-    fun givenFavorite_whenStartTappedAgain_thenReturnsToNotFavorite(){
+    fun givenFavorite_whenStarTappedAgain_thenReturnsToNotAFavorite() {
         setCard()
 
-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+            .performClick()
 
-        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true)
+            .performClick()
 
-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).assertIsDisplayed()
-
-        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true).assertDoesNotExist()
-
-
-
+        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true)
+            .assertDoesNotExist()
     }
+
 }
+
+
+

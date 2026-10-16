@@ -16,26 +16,23 @@ import com.example.jetpackcomposedemos.features.artists.domain.Artist
 
 @Composable
 fun ArtistBookingCard(artist: Artist) {
-    Log.d("Compose Demo", "ArtistBookingCard: Composing")
-// longer syntax, works with mutableState wrapper around our values
+    Log.d("ComposeDemo", "ArtistBookingCard: composing")
+    // longer syntax, works with the mutableState wrapper around our value
 //    val selectedState = remember {
 //        mutableStateOf(false)
 //    }
-
-    // shorter syntax
-    var isSelected  by remember {
+    // shorter syntax, works directly with our value
+    var isSelected by remember {
         mutableStateOf(false)
     }
 
-
     Column(
         modifier = Modifier.padding(16.dp)
-
     ) {
         ArtistInformation(artist = artist)
         BookingControls(
             isSelected = isSelected,
-            onSelectionChange = {
+            onSelectionChanged = {
                 isSelected = !isSelected
             }
         )
@@ -45,7 +42,8 @@ fun ArtistBookingCard(artist: Artist) {
 @Composable
 fun ArtistInformation(artist: Artist) {
 
-    Log.d("Composed Demo", "Artist information: Composing")
+    Log.d("ComposeDemo", "ArtistInformation: composing")
+
     Text(artist.name)
     Text(artist.genre)
 
@@ -54,13 +52,12 @@ fun ArtistInformation(artist: Artist) {
 @Composable
 fun BookingControls(
     isSelected: Boolean,
-    onSelectionChange: () -> Unit
-
+    onSelectionChanged: () -> Unit
 ) {
-    Log.d("Composed Demo", "Artist information: Composing with $isSelected")
+    Log.d("ComposeDemo", "BookingControls: composing with $isSelected")
 
     Button(
-        onClick = onSelectionChange
+        onClick = onSelectionChanged
     ) {
         Text(
             if (isSelected) {
@@ -71,3 +68,7 @@ fun BookingControls(
         )
     }
 }
+
+
+
+

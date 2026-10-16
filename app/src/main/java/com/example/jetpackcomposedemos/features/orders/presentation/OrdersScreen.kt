@@ -14,10 +14,10 @@ import com.example.jetpackcomposedemos.core.LoadableState
 fun OrdersScreen(
     useTwoPaneLayout: Boolean,
     viewModel: OrdersViewModel = hiltViewModel()
-){
+) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit){
+    LaunchedEffect(Unit) {
         viewModel.loadData()
     }
 
@@ -40,5 +40,5 @@ fun OrdersScreen(
             )
         }
     }
-
 }
+

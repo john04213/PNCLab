@@ -3,7 +3,6 @@ package com.example.jetpackcomposedemos.features.artists.data.local
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-
 @Entity(tableName = "artists")
 data class ArtistEntity(
     @PrimaryKey
@@ -15,3 +14,5 @@ data class ArtistEntity(
     val description: String,
     val isAvailable: Boolean
 )
+
+

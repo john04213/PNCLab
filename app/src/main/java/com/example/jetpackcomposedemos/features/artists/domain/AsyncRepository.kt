@@ -7,12 +7,14 @@ import com.example.jetpackcomposedemos.features.artists.data.HardCodedArtistData
 class AsyncRepository(
     private val dataSource: ArtistDataSource = HardCodedArtistDataSource()
 ) {
+
     suspend fun getArtists(): List<Artist> {
         return dataSource.getArtists()
-
             .map { artistDto ->
                 ArtistMapper.mapToDomain(artistDto)
             }
     }
+
 }
+
 

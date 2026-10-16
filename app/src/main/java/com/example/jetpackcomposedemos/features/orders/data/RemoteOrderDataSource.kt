@@ -2,9 +2,11 @@ package com.example.jetpackcomposedemos.features.orders.data
 
 import retrofit2.http.GET
 
-interface RemoteOrderDataSource: OrderDataSource {
+interface RemoteOrderDataSource : OrderDataSource {
 
     @GET("Order/customer")
     override suspend fun getOrders(): List<OrderLineItemDto>
 
 }
+
+

@@ -1,10 +1,7 @@
 package com.example.jetpackcomposedemos.features.auth.domain
 
-fun aUser(
-    id: String = "user-1",
-    username: String = "testuser",
-    token: String = "test-token"
-) = User(id,username, token)
+import com.example.jetpackcomposedemos.testutil.builders.aUser
+
 
 class RecordingAuthRepository(
     private val result: Result<User> = Result.success(aUser())
@@ -27,3 +24,4 @@ class RecordingAuthRepository(
     }
 
 }
+

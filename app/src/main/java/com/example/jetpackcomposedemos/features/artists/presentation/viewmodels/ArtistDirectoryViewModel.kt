@@ -7,14 +7,13 @@ import com.example.jetpackcomposedemos.features.artists.domain.GetAvailableArtis
 import com.example.jetpackcomposedemos.features.artists.domain.RefreshArtistsUseCase
 import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class ArtistDirectoryViewModel @Inject constructor(
@@ -27,18 +26,17 @@ class ArtistDirectoryViewModel @Inject constructor(
         ArtistDirectoryState()
     )
 
-
-    // expose (publicly) a rea-only view of the state object
+    // expose (publicly) a read-only view of the state object
     val uiState: StateFlow<ArtistDirectoryState> = _uiState.asStateFlow()
 
     init {
-        // establishes a subscription to the observable collection
-        // of artists from our room
+        // establish a subscription to the observable collection
+        // of artists from our Room db
         viewModelScope.launch {
-            // the subscribing (collecting) inside the viewModelScope
+            // by subscribing (collecting) inside the viewModelScope
             // the subscription will be automatically released and disposed
-            //when the viewModel is destroyed (i.e when the user
-            //  navigates away from this screen)
+            // when the viewModel is destroyed (i.e. when the user
+            // navigates away from this screen)
             getAvailableArtists().collect { artists ->
                 _uiState.update { currentState ->
                     currentState.copy(
@@ -50,15 +48,14 @@ class ArtistDirectoryViewModel @Inject constructor(
     }
 
     // loadArtists does not get the data for the view,
-    // insteasd it refreshes the local Room db
+    // instead it refreshes the local Room db
     fun loadArtists() {
         // call an async data loading method and we are not in an async method
-        if(_uiState.value.isRefreshing) return
+        if (_uiState.value.isRefreshing) return
 
-        // call an async data loading method and we are not in an async method
         viewModelScope.launch {
             _uiState.update { currentState ->
-                currentState.copy (
+                currentState.copy(
                     isRefreshing = true,
                     errorMessage = null
                 )
@@ -66,11 +63,11 @@ class ArtistDirectoryViewModel @Inject constructor(
 
             try {
                 refreshArtists()
-                _uiState.update { it.copy(isRefreshing = false)}
-
-            }  catch (e: CancellationException) {
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
+            catch (e: CancellationException) {
                 // NEVER swallow a CancellationException
-                // doing so can orphan the coroutine (suspendable)
+                // doing so can orphan the coroutine (suspendables)
                 throw e
             }
             catch (e: Exception) {
@@ -81,28 +78,24 @@ class ArtistDirectoryViewModel @Inject constructor(
                         isRefreshing = false,
                         errorMessage = e.message ?: "Couldn't refresh artists"
                     )
-
                 }
             }
-
-
 
         }
     }
 
-    fun dismissError(){
-        _uiState.update {it.copy(errorMessage = null) }
+    fun dismissError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
 
-//    This approach is vulnerable to race conditioning
-//    fun updateGenreFilter(genre: String) {
-//        _uiState.value = _uiState.value.copy((genreFiler = genre)
-//    }
-//
-
-
     fun updateGenreFilter(genre: String) {
+
+        // this approach is vulnerable to race conditions
+        // (usually triggered by async code)
+        // so don't use this pattern in a ViewModel
+//        _uiState.value = _uiState.value.copy(genreFilter = genre)
+
         // change the state in a way that can prevent race conditions
         _uiState.update { currentState ->
             currentState.copy(
@@ -110,9 +103,9 @@ class ArtistDirectoryViewModel @Inject constructor(
             )
         }
     }
+
     fun updateLocationFilter(location: String) {
-        // change the state in a way that can prevent race conditions
-        _uiState.update  {currentState ->
+        _uiState.update { currentState ->
             currentState.copy(
                 locationFilter = location
             )
@@ -120,19 +113,19 @@ class ArtistDirectoryViewModel @Inject constructor(
     }
 
     fun updateShowFilter(show: Boolean) {
-        // change the state in a way that can prevent race conditions
-        _uiState.update  {currentState ->
+        _uiState.update { currentState ->
             currentState.copy(
                 showFilter = show
             )
         }
     }
 
-    fun setSelectedArtist(artist: Int) {
-        _uiState.update {currentState ->
+    fun setSelectedArtist(artistId: Int) {
+        _uiState.update { currentState ->
             currentState.copy(
-                selectedArtistId = artist
+                selectedArtistId = artistId
             )
         }
     }
+
 }

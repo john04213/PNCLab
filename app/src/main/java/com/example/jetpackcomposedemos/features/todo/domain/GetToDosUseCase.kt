@@ -6,9 +6,12 @@ import javax.inject.Singleton
 @Singleton
 class GetToDosUseCase @Inject constructor(
     private val toDoRepository: ToDoRepository
-){
+) {
 
     suspend operator fun invoke(): List<ToDo> {
         return toDoRepository.getToDos()
     }
+
 }
+
+

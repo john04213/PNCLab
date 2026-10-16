@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,23 +22,21 @@ fun OrderCard(
     useTwoPaneLayout: Boolean
 ) {
     Card(
-       modifier = Modifier.fillMaxWidth()
-    ){
-        if(useTwoPaneLayout){
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        if (useTwoPaneLayout) {
             Row(
                 modifier = Modifier.fillMaxWidth()
-                    // the following is necessary for the verticalDivider
-                    // to know the height of the row so it can display
+                    // the following is necessary for the VerticalDivider
+                    // to know the height of the row, so it can display
                     .height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ){
-                Box(
-                    modifier = Modifier.weight(2f).padding(12.dp)
-                ){
+            ) {
+                Box(modifier = Modifier.weight(2f).padding(12.dp)) {
                     OrderSummary(order = order)
                 }
                 VerticalDivider()
-                Box(modifier = Modifier.weight(3f).padding(12.dp)){
+                Box(modifier = Modifier.weight(3f).padding(12.dp)) {
                     OrderLines(order = order)
                 }
             }
@@ -47,18 +44,18 @@ fun OrderCard(
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
-            ){
-                Box(modifier = Modifier.padding(12.dp)
-                ){
+            ) {
+                Box(modifier = Modifier.padding(12.dp)) {
                     OrderSummary(order = order)
                 }
                 HorizontalDivider()
-                Box(
-                    modifier = Modifier.padding(12.dp)
-                ){
+                Box(modifier = Modifier.padding(12.dp)) {
                     OrderLines(order = order)
                 }
             }
         }
     }
 }
+
+
+

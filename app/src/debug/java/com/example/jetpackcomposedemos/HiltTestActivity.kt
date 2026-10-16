@@ -1,4 +1,4 @@
-package com.example.jetpackcomposedemos.testutil
+package com.example.jetpackcomposedemos
 
 import androidx.activity.ComponentActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -6,3 +6,5 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class HiltTestActivity: ComponentActivity() {
 }
+
+

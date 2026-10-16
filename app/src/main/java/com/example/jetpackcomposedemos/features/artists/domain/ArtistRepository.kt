@@ -7,7 +7,9 @@ interface ArtistRepository {
     fun observeArtists(): Flow<List<Artist>>
     fun observeArtist(id: Int): Flow<Artist?>
 
-
     suspend fun refreshArtists()
     suspend fun refreshArtist(id: Int)
+
 }
+
+

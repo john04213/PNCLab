@@ -2,7 +2,6 @@ package com.example.jetpackcomposedemos.features.todo.data
 
 import com.example.jetpackcomposedemos.features.todo.domain.ToDo
 
-
 object ToDoMapper {
 
     fun toDomain(entity: ToDoEntity): ToDo {
@@ -20,6 +19,5 @@ object ToDoMapper {
             completed = domain.completed
         )
     }
-
 
 }

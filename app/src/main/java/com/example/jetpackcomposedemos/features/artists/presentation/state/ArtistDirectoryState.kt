@@ -2,7 +2,7 @@ package com.example.jetpackcomposedemos.features.artists.presentation.state
 
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 
-data class ArtistDirectoryState (
+data class ArtistDirectoryState(
     val artists: List<Artist> = emptyList(),
     val genreFilter: String = "",
     val locationFilter: String = "",
@@ -10,14 +10,16 @@ data class ArtistDirectoryState (
     val selectedArtistId: Int? = null,
     val isRefreshing: Boolean = false,
     val errorMessage: String? = null
-){
+) {
     val displayedArtists: List<Artist>
         get() = artists.filter {
-            (genreFilter == "" || it.genre.contains(genreFilter, ignoreCase = true)) &&
-                    (locationFilter == "" || it.location.contains(locationFilter, ignoreCase = true))
+            val matchesGenre = genreFilter == "" || it.genre.contains(genreFilter, ignoreCase = true)
+            val matchesLocation = locationFilter == "" || it.location.contains(locationFilter, ignoreCase = true)
+
+            matchesGenre && matchesLocation
         }
 
     val selectedArtist: Artist?
-        get() = artists.find{it.id == selectedArtistId}
+        get() = artists.find { it.id == selectedArtistId }
 
 }

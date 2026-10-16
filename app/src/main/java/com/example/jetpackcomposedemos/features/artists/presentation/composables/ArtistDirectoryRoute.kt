@@ -15,8 +15,7 @@ fun ArtistDirectoryRoute(
     onArtistSelected: (Int) -> Unit = {},
     useTwoPaneLayout: Boolean,
     viewModel: ArtistDirectoryViewModel = hiltViewModel()
-)  {
-
+) {
     // get an observable copy of the state inside our viewModel
     val uiState by viewModel.uiState.collectAsState()
 
@@ -24,14 +23,12 @@ fun ArtistDirectoryRoute(
         viewModel.loadArtists()
     }
 
-
     ArtistDirectory(
         state = uiState,
         useTwoPaneLayout = useTwoPaneLayout,
         onBack = onBack,
         onArtistSelected = {
             viewModel.setSelectedArtist(it)
-            // in two pane the details show on the right, so only navigate in one pane
             if (!useTwoPaneLayout) {
                 onArtistSelected(it)
             }
@@ -46,4 +43,5 @@ fun ArtistDirectoryRoute(
             viewModel.updateShowFilter(it)
         }
     )
+
 }

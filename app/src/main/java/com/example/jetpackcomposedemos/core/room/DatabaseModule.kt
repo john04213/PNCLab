@@ -12,18 +12,17 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
 
     @Provides
     @Singleton
-    fun providesDatabase(@ApplicationContext context: Context): AppDatabase {
-        return  Room.databaseBuilder(
+    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
             context.applicationContext,
             AppDatabase::class.java,
-            "app.database"
+            "app_database"
         ).build()
     }
 
@@ -44,4 +43,7 @@ class DatabaseModule {
     fun provideArtistDao(database: AppDatabase): ArtistDao {
         return database.artistDao()
     }
+
 }
+
+

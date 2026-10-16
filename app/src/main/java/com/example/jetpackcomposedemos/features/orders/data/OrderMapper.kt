@@ -8,9 +8,9 @@ object OrderMapper {
 
     fun mapToDomain(items: List<OrderLineItemDto>): List<Order> {
 
-        val orderGroupMap = items.groupBy({ it.orderNumber})
+        val orderGroupMap = items.groupBy { it.orderNumber }
 
-        return orderGroupMap.map{ (orderNumber, orderLineItems) ->
+        return orderGroupMap.map { (orderNumber, orderLineItems) ->
             val firstLine = orderLineItems.first()
             Order(
                 id = orderNumber,
@@ -19,17 +19,20 @@ object OrderMapper {
                 lastName = firstLine.lastName,
                 orderDate = LocalDateTime.parse(firstLine.orderDate),
                 shipDate = LocalDateTime.parse(firstLine.shipDate),
-                items = orderLineItems.map{ lineItem ->
+                items = orderLineItems.map { lineItem ->
                     LineItem(
-                        id =  lineItem.id,
+                        id = lineItem.id,
                         productName = lineItem.productName,
                         orderQty = lineItem.orderQty,
                         unitPrice = lineItem.unitPrice,
                         lineTotal = lineItem.lineTotal
                     )
                 }
-
             )
         }
     }
+
 }
+
+
+

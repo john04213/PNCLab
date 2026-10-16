@@ -2,11 +2,11 @@ package com.example.jetpackcomposedemos.core
 
 import kotlinx.serialization.Serializable
 
-
 sealed interface EventPlannerRoute
 
 @Serializable
 data object DashboardRoute: EventPlannerRoute
+
 @Serializable
 data object ArtistListRoute: EventPlannerRoute
 
@@ -15,21 +15,28 @@ data class ArtistDetailsRoute(
     val artistId: Int
 ): EventPlannerRoute
 
+
 @Serializable
 data object BoardMemberListRoute: EventPlannerRoute
 
 @Serializable
 data class BoardMemberDetailsRoute(
     val boardMemberId: Int
-):EventPlannerRoute
+): EventPlannerRoute
+
+
 
 @Serializable
 data object LegacyArtistListRoute: EventPlannerRoute
 
+
 @Serializable
 data object OrdersRoute: EventPlannerRoute
 
+
 @Serializable
-data object  ToDosRoute: EventPlannerRoute
+data object ToDosRoute: EventPlannerRoute
+
+
 
 

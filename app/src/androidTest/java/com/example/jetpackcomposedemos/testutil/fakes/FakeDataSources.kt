@@ -8,20 +8,17 @@ import com.example.jetpackcomposedemos.testutil.builders.anArtistDto
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
-// @singleton + @Inject constructor (in testing) means that Hilt creates
-// ONE instance per test
-// That means that the test itself can ask for this to be injected,
+// @Singleton + @Inject constructor (in testing) means that Hilt creates
+// ONE instace per test.
+// that means that the test itself can ask for this to be injected,
 // and the test will get the same instance that any other item in that test
 // uses
 @Singleton
-class FakeArtistDataSource @Inject constructor(
+class FakeArtistDataSource @Inject constructor() : ArtistDataSource {
 
-): ArtistDataSource {
-
-    val artists: List<ArtistDto> = listOf(
+    var artists: List<ArtistDto> = listOf(
         anArtistDto(id = 1, name = "Abe"),
-        anArtistDto(id = 2, name = "Bob"),
+        anArtistDto(id = 2, name = "Bea"),
     )
 
     var failure: Throwable? = null
@@ -33,9 +30,11 @@ class FakeArtistDataSource @Inject constructor(
 
     override suspend fun getArtist(id: Int): ArtistDto {
         failure?.let { throw it }
-        return artists.first { it.id == id}
+        return artists.first { it.id == id }
     }
+
 }
+
 
 @Singleton
 class FakeOrderDataSource @Inject constructor(): OrderDataSource {
@@ -49,3 +48,9 @@ class FakeOrderDataSource @Inject constructor(): OrderDataSource {
     }
 
 }
+
+
+
+
+
+

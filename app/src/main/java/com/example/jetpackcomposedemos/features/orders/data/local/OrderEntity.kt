@@ -14,3 +14,5 @@ data class OrderEntity(
     val orderDate: LocalDateTime,
     val shipDate: LocalDateTime,
 )
+
+

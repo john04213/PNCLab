@@ -13,3 +13,6 @@ fun anArtistDto(
     tags: String = ""
 ) = ArtistDto(id, name, genre, location, imageUrl, description, tags)
 
+
+
+

@@ -9,7 +9,7 @@ import androidx.room.Transaction
 @Dao
 abstract class OrderDao {
     // needs to be an abstract class instead of an interface
-    // so we can have some code inSerOrderWithLineItems
+    // so we can have some code in insertOrderWithLineItems
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertOrder(order: OrderEntity)
@@ -18,8 +18,8 @@ abstract class OrderDao {
     abstract suspend fun insertLineItems(items: List<LineItemEntity>)
 
     @Transaction
-    open suspend fun insertOrderWithLineItems(order: OrderWithLineItemsEntity){
-        // a transaction method with a body must be "open"
+    open suspend fun insertOrderWithLineItems(order: OrderWithLineItemsEntity) {
+        // a @Transaction method with a body must be "open"
         // to being overridden in the auto-generated child class
         insertOrder(order.order)
         insertLineItems(order.lineItems.map {
@@ -30,4 +30,6 @@ abstract class OrderDao {
     @Transaction
     @Query("SELECT * FROM orders")
     abstract suspend fun getOrdersWithLineItems(): List<OrderWithLineItemsEntity>
+
 }
+

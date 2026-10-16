@@ -12,27 +12,26 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class  AdventureWorks
-
+annotation class AdventureWorks
 
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NetworkModule{
+object NetworkModule {
 
     @Provides
     @Singleton
-    fun providesOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
             .apply {
-                if(BuildConfig.DEBUG) {
+                if (BuildConfig.DEBUG) {
                     addInterceptor(HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.BODY
                     })
@@ -43,7 +42,7 @@ object NetworkModule{
 
     @Provides
     @Singleton
-    fun providesRetrofit(
+    fun provideRetrofit(
         client: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
@@ -56,7 +55,7 @@ object NetworkModule{
     @Provides
     @Singleton
     @AdventureWorks
-    fun providesAWRetrofit(
+    fun provideAWRetrofit(
         client: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
@@ -66,9 +65,10 @@ object NetworkModule{
             .build()
     }
 
+
     @Provides
     @Singleton
-    fun providesArtistDataSource(
+    fun provideArtistDataSource(
         retrofit: Retrofit
     ): ArtistDataSource {
         return retrofit.create(
@@ -85,4 +85,6 @@ object NetworkModule{
             RemoteOrderDataSource::class.java
         )
     }
+
+
 }

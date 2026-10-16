@@ -13,19 +13,21 @@ import com.example.jetpackcomposedemos.features.orders.domain.Order
 fun OrdersList(
     orders: List<Order>,
     useTwoPaneLayout: Boolean
-){
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement =  Arrangement.spacedBy(8.dp)
-    ){
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         items(
             items = orders,
-            key = { order: Order -> order.id},
-        ){ order: Order ->
+            key = { order: Order -> order.id }
+        ) { order: Order ->
             OrderCard(
-                order  = order,
+                order = order,
                 useTwoPaneLayout = useTwoPaneLayout
             )
         }
     }
 }
+
+

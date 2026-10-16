@@ -14,8 +14,10 @@ import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
 @Composable
-fun BoardMemberCard(member: BoardMember,
-                    onClick: () -> Unit) {
+fun BoardMemberCard(
+    member: BoardMember,
+    onClick: () -> Unit = {}
+) {
 
     Card(
         modifier = Modifier
@@ -50,8 +52,8 @@ fun BoardMemberCardPreview() {
 
     JetpackComposeDemosTheme {
         BoardMemberCard(
-            member = member,
-            onClick = {}
+            member = member
         )
     }
 }
+

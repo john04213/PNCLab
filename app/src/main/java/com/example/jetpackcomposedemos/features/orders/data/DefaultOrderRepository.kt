@@ -3,8 +3,8 @@ package com.example.jetpackcomposedemos.features.orders.data
 import com.example.jetpackcomposedemos.core.ApplicationScope
 import com.example.jetpackcomposedemos.features.orders.data.local.OrderDao
 import com.example.jetpackcomposedemos.features.orders.data.local.OrderEntityMapper
-import com.example.jetpackcomposedemos.features.orders.domain.OrderRepository
 import com.example.jetpackcomposedemos.features.orders.domain.Order
+import com.example.jetpackcomposedemos.features.orders.domain.OrderRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,12 +16,12 @@ class DefaultOrderRepository @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope // outlives any one screen
 ): OrderRepository {
 
-    override suspend fun getOrders():List<Order> {
+    override suspend fun getOrders(): List<Order> {
         val data = dataSource.getOrders()
         val orders = OrderMapper.mapToDomain(data)
 
         // start a background task (on another thread)
-        // to store the orders to Room db
+        // to store these orders to Room db
         scope.launch(Dispatchers.IO) {
             try {
                 orders.map {
@@ -29,13 +29,15 @@ class DefaultOrderRepository @Inject constructor(
                 }.forEach {
                     orderDao.insertOrderWithLineItems(it)
                 }
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 // log it; a failed cache write should NOT break the app
             }
-
         }
 
         return orders
     }
 
+
 }
+
+

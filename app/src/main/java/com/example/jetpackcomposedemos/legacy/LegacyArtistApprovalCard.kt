@@ -7,7 +7,6 @@ import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.databinding.LegacyArtistApprovalBinding
 
 @Composable
-
 fun LegacyArtistApprovalCard(
     artist: Artist,
     isApproved: Boolean,
@@ -17,21 +16,30 @@ fun LegacyArtistApprovalCard(
     AndroidViewBinding(
         factory = LegacyArtistApprovalBinding::inflate,
         modifier = modifier
-    ){
+    ) {
         artistNameText.text = artist.name
         genreText.text = "Genre: ${artist.genre}"
-        locationText.text = "Location: ${artist.location}"
+        locationText.text = artist.location
+
         description.text = artist.description
-        approvalStatusText.text = "Approval status: ${if (isApproved) "Approved" else "Pending"}"
-        approvalButton.text =
-            if (isApproved){
-                "Revoke approval"
+
+        approvalStatusText.text =
+            if (isApproved) {
+                "Approval status: Approved"
             } else {
-                "Approve Booking "
+                "Approval status: Pending"
+            }
+
+        approvalButton.text =
+            if (isApproved) {
+                "Revoke Approval"
+            } else {
+                "Approve Booking"
             }
 
         approvalButton.setOnClickListener {
             onApprovalChange(!isApproved)
         }
+
     }
 }

@@ -14,6 +14,7 @@ class AuthViewModel(): ViewModel() {
 
     val uiState: StateFlow<AuthState> = _uiState.asStateFlow()
 
+
     fun login(user: User) {
         _uiState.update {
             AuthState.Authenticated(user)
@@ -26,3 +27,9 @@ class AuthViewModel(): ViewModel() {
         }
     }
 }
+
+
+
+
+
+

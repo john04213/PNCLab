@@ -5,8 +5,8 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-
-@Entity(tableName = "order_line_items",
+@Entity(
+    tableName = "order_line_items",
     foreignKeys = [
         ForeignKey(
             entity = OrderEntity::class,
@@ -28,3 +28,5 @@ data class LineItemEntity(
     val unitPrice: Double,
     val lineTotal: Double
 )
+
+

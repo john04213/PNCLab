@@ -1,11 +1,10 @@
 package com.example.jetpackcomposedemos.features.orders.data.local
 
 import androidx.room.Embedded
-import androidx.room.Entity
 import androidx.room.Relation
 
+data class OrderWithLineItemsEntity(
 
-data class OrderWithLineItemsEntity (
     @Embedded
     var order: OrderEntity,
 
@@ -16,3 +15,5 @@ data class OrderWithLineItemsEntity (
     var lineItems: List<LineItemEntity>
 
 )
+
+

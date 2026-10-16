@@ -11,14 +11,16 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun OrderSummary(
     order: Order
-){
+) {
     val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
-    ){
-        Text("order #${order.id}")
-        Text("Customer ${order.firstName} ${order.lastName}")
+    ) {
+        Text("Order #:${order.id}")
+        Text("Customer: ${order.firstName} ${order.lastName}")
         Text("Order Date: ${order.orderDate.format(formatter)}")
         Text("Ship Date: ${order.shipDate.format(formatter)}")
     }
 }
+
+

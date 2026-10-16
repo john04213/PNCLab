@@ -3,10 +3,9 @@ package com.example.jetpackcomposedemos.features.artists.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jetpackcomposedemos.core.LoadableState
-import com.example.jetpackcomposedemos.features.artists.domain.GetArtistUseCase
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
+import com.example.jetpackcomposedemos.features.artists.domain.GetArtistUseCase
 import com.example.jetpackcomposedemos.features.artists.domain.RefreshArtistUseCase
-
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -33,8 +32,8 @@ class ArtistDetailsViewModel @Inject constructor(
     private var loadedId: Int? = null
 
     fun loadArtist(id: Int) {
-      // Don't need to restart (and flash loading) if this id is already being observed
-        if(id == loadedId && loadJob?.isActive == true) return
+        // Don't restart (and flash loading) if this id is already being observed
+        if (id == loadedId && loadJob?.isActive == true) return
 
         loadedId = id
         loadJob?.cancel()
@@ -44,13 +43,15 @@ class ArtistDetailsViewModel @Inject constructor(
 
             // refresh the artist data in the background
             launch {
-                try{
+                try {
                     refreshArtist(id)
-                } catch(e: CancellationException) {
+                }
+                catch (e: CancellationException) {
                     throw e
-                } catch (e: Exception) {
+                }
+                catch (e: Exception) {
                     // with a cached copy on screen, a failed refresh is silent
-                    if(!hadCache) {
+                    if (!hadCache) {
                         _uiState.value = LoadableState.Error(
                             e.message ?: "Couldn't load artist"
                         )
@@ -64,10 +65,13 @@ class ArtistDetailsViewModel @Inject constructor(
                     artist != null -> _uiState.value = LoadableState.Success(artist)
                     hadCache -> _uiState.value = LoadableState.Empty // temporary state while the refresh is still underway
                     // no other useful cases - stay in loading state
-                    // until the refresh either write to the db or fails
+                    // until the refresh either writes to the db or fails
                 }
             }
 
         }
     }
+
 }
+
+

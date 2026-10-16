@@ -21,6 +21,7 @@ class RandomArtistDataSource @Inject constructor() : ArtistDataSource {
         }
 
     }
+
     override suspend fun getArtist(id: Int): ArtistDto {
         return ArtistDto(
             id = id,
@@ -32,5 +33,6 @@ class RandomArtistDataSource @Inject constructor() : ArtistDataSource {
             tags = "tag,tag,tag",
         )
     }
+
 
 }

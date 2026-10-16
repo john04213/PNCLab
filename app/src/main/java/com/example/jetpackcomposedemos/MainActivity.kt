@@ -17,7 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class EventPlannerApplication(): Application()
+class EventPlannerApplication: Application()
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -35,19 +35,14 @@ class MainActivity : ComponentActivity() {
 
                     Box(
                         modifier = modifier
-
                     ) {
                         EventPlannerApp()
-//                        AccountListScreen(
-//                            accounts = sampleAccounts,
-//                            onAccountClick = { accountId ->
-//                                Log.d("MainActivity", "Account clicked: $accountId")
-//                            }
-//                        )
                     }
                 }
             }
         }
     }
 }
+
+
 

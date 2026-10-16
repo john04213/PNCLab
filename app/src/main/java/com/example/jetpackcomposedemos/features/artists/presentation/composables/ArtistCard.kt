@@ -26,22 +26,23 @@ import com.example.jetpackcomposedemos.R
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
-
 @Composable
-fun ArtistCard(artist: Artist,
-               onClick: () -> Unit
+fun ArtistCard(
+    artist: Artist,
+    onClick: () -> Unit
 ) {
     var isFavorite by remember {
         mutableStateOf(false)
     }
 
     val starScale by animateFloatAsState(
-        targetValue = if(isFavorite) 1.5f else 1f,
-        animationSpec =  spring(
+        targetValue = if (isFavorite) 1.5f else 1f,
+        animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
         )
     )
+
     Card(
         modifier = Modifier
             .fillMaxWidth(),
@@ -49,7 +50,7 @@ fun ArtistCard(artist: Artist,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
         ),
-        shape = MaterialTheme.shapes.medium
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -62,15 +63,14 @@ fun ArtistCard(artist: Artist,
             ) {
                 Icon(
                     painter = painterResource(
-                        id = if(isFavorite) R.drawable.filled_star else R.drawable.outline_star
+                        id = if (isFavorite) R.drawable.filled_star else R.drawable.outline_star
                     ),
-                    contentDescription = if(isFavorite) "Favorite" else "Not favorite",
-                    tint = if(isFavorite)
+                    contentDescription = if (isFavorite) "Favorite" else "Not favorite",
+                    tint = if (isFavorite)
                         MaterialTheme.colorScheme.primary
                     else
-                    MaterialTheme.colorScheme.onSurface,
-
-                    modifier = Modifier.graphicsLayer{
+                        MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.graphicsLayer {
                         scaleX = starScale
                         scaleY = starScale
                     }
@@ -80,29 +80,34 @@ fun ArtistCard(artist: Artist,
                 text = artist.name,
                 style = MaterialTheme.typography.titleMedium
             )
-            Text("Genre: ${artist.genre}")
+            Text(
+                "Genre: ${artist.genre}"
+            )
             Text("Location: ${artist.location}")
         }
     }
 
 }
 
-@Preview(showBackground = true)
+
+@Preview(showBackground = false)
 @Composable
 fun ArtistCardPreview() {
+    val artist = Artist(
+        id = 1,
+        name = "Artist Name",
+        genre = "Genre",
+        location = "Location",
+        imageUrl = "",
+        description = "",
+        isAvailable = true,
+    )
+
     JetpackComposeDemosTheme {
-        val artist = Artist(
-            id = 1,
-            name = "Artist Name",
-            genre = "Genre",
-            location = "Location",
-            imageUrl = "Image URL",
-            description = "Description",
-            isAvailable = true
-        )
         ArtistCard(
             artist = artist,
             onClick = {}
         )
     }
 }
+

@@ -1,10 +1,10 @@
 package com.example.jetpackcomposedemos.features.todo.presentation
 
-
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -36,7 +36,7 @@ fun ToDosList(
     useTwoPaneLayout: Boolean,
     onAdd: (String) -> Unit,
     onToggleCompleted: (ToDo) -> Unit
-){
+) {
     var showDrawer by remember {
         mutableStateOf(false)
     }
@@ -58,8 +58,8 @@ fun ToDosList(
             }
         }
     ) {
-        LazyVerticalGrid (
-            columns = GridCells.Fixed(if(useTwoPaneLayout) 2 else 1),
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(if (useTwoPaneLayout) 2 else 1),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -75,16 +75,16 @@ fun ToDosList(
             }
         }
 
-        if(showDrawer) {
-            ModalBottomSheet (
+        if (showDrawer) {
+            ModalBottomSheet(
                 onDismissRequest = {
                     showDrawer = false
                 }
             ) {
-                TextField (
+                TextField(
                     value = newText,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    onValueChange = { newText = it},
+                    onValueChange = { newText = it },
                     label = { Text("New to-do") }
                 )
 
@@ -95,11 +95,10 @@ fun ToDosList(
                         newText = ""
                     },
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                ){
+                ) {
                     Text("Add")
                 }
             }
         }
     }
-
 }

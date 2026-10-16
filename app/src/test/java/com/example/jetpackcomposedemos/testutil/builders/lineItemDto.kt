@@ -17,5 +17,5 @@ fun aLineItemDto(
 ) = OrderLineItemDto(
     id, customerId, firstName, lastName, orderDate, shipDate,
     productName, orderNumber, orderQty, unitPrice, lineTotal
-
 )
+

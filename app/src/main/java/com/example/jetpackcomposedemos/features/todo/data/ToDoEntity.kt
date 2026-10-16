@@ -3,7 +3,6 @@ package com.example.jetpackcomposedemos.features.todo.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-
 @Entity(tableName = "todo")
 data class ToDoEntity(
     @PrimaryKey(autoGenerate = true)
@@ -11,3 +10,4 @@ data class ToDoEntity(
     val title: String,
     val completed: Boolean
 )
+

@@ -12,12 +12,11 @@ import androidx.compose.ui.unit.dp
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 
 @Composable
-
 fun ArtistList(
     artists: List<Artist>,
     onArtistSelected: (Int) -> Unit,
     innerPadding: PaddingValues
-){
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -36,4 +35,5 @@ fun ArtistList(
             )
         }
     }
+
 }

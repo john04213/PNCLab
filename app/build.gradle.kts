@@ -7,10 +7,10 @@ plugins {
     alias(libs.plugins.androidx.room)
 }
 
-
 room {
     schemaDirectory("${projectDir}/schemas")
 }
+
 android {
     namespace = "com.example.jetpackcomposedemos"
     compileSdk {
@@ -24,7 +24,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "com.example.jetpackcomposedemos.testutil.HiltTestRunner"
+        testInstrumentationRunner = "com.example.jetpackcomposedemos.HiltTestRunner"
         buildConfigField("String", "BASE_URL", "\"https://kazoopromotions.com/api/\"")
         buildConfigField("String", "AW_BASE_URL", "\"https://api.bootcampcentral.com/api/\"")
     }
@@ -47,7 +47,7 @@ android {
     }
 
     sourceSets {
-        getByName("androidTest"){
+        getByName("androidTest") {
             assets.directories.add("schemas")
         }
     }
@@ -57,15 +57,14 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.material3)
     implementation(libs.androidx.recyclerview)
-    androidTestImplementation(libs.androidx.runner)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -93,8 +92,6 @@ dependencies {
     androidTestImplementation(libs.espresso.contrib)
     androidTestImplementation(libs.hilt.android.testing)
     kspAndroidTest(libs.hilt.compiler)
-    androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.compiler)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.room.testing)
     implementation(platform(libs.kotlinx.coroutines.bom))
@@ -102,4 +99,10 @@ dependencies {
     androidTestImplementation(platform(libs.kotlinx.coroutines.bom))
     androidTestImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit.ktx)
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+        force(libs.androidx.espresso.core)
+    }
 }

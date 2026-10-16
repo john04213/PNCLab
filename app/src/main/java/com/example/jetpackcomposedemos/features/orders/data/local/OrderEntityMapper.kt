@@ -5,7 +5,6 @@ import com.example.jetpackcomposedemos.features.orders.domain.Order
 
 object OrderEntityMapper {
 
-
     fun mapToDomain(line: LineItemEntity): LineItem {
         return LineItem(
             id = line.id,
@@ -15,7 +14,6 @@ object OrderEntityMapper {
             lineTotal = line.lineTotal
         )
     }
-
 
     fun mapToDomain(order: OrderEntity): Order {
         return Order(
@@ -37,14 +35,13 @@ object OrderEntityMapper {
             lastName = order.order.lastName,
             orderDate = order.order.orderDate,
             shipDate = order.order.shipDate,
-            items =  order.lineItems.map { item ->
+            items = order.lineItems.map { item ->
                 mapToDomain(item)
-
             }
         )
     }
 
-    fun mapToEntity(order:Order): OrderWithLineItemsEntity {
+    fun mapToEntity(order: Order): OrderWithLineItemsEntity {
         return OrderWithLineItemsEntity(
             order = OrderEntity(
                 id = order.id,
@@ -63,11 +60,11 @@ object OrderEntityMapper {
                     unitPrice = lineItem.unitPrice,
                     lineTotal = lineItem.lineTotal
                 )
-
             }
         )
     }
 
 }
+
 
 

@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import androidx.window.core.layout.WindowSizeClass
+import com.example.jetpackcomposedemos.BuildConfig
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.features.artists.presentation.composables.ArtistDetails
 import com.example.jetpackcomposedemos.features.artists.presentation.composables.ArtistDirectoryRoute
@@ -21,16 +22,14 @@ import com.example.jetpackcomposedemos.features.auth.presentation.LoginScreen
 import com.example.jetpackcomposedemos.features.boardmembers.domain.BoardMember
 import com.example.jetpackcomposedemos.features.boardmembers.presentation.BoardMemberDetails
 import com.example.jetpackcomposedemos.features.boardmembers.presentation.BoardMemberList
-import com.example.jetpackcomposedemos.legacy.LegacyArtistList
-import com.example.jetpackcomposedemos.BuildConfig
 import com.example.jetpackcomposedemos.features.orders.presentation.OrdersScreen
 import com.example.jetpackcomposedemos.features.todo.presentation.ToDosScreen
+import com.example.jetpackcomposedemos.legacy.LegacyArtistList
 
 @Composable
 fun EventPlannerApp(
     viewModel: AuthViewModel = viewModel()
-){
-
+) {
     val authState by viewModel.uiState.collectAsState()
 
     val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
@@ -45,16 +44,15 @@ fun EventPlannerApp(
         is AuthState.Unauthenticated -> {
             LoginScreen(
                 onLoginSuccess = { user ->
-                    viewModel.login(user)
+                viewModel.login(user)
                 }
             )
         }
-
         is AuthState.Authenticated -> {
             NavHost(
                 navController = navController,
                 startDestination = DashboardRoute
-            ){
+            ) {
                 composable<DashboardRoute> {
                     EventPlanningDashboard(
                         onViewArtists = {
@@ -73,10 +71,11 @@ fun EventPlannerApp(
                 }
 
                 composable<ArtistListRoute> {
+                    // load the artists from repository or service class
+
                     ArtistDirectoryRoute(
                         onArtistSelected = { artistId ->
                             navController.navigate(ArtistDetailsRoute(artistId))
-
                         },
                         onBack = {
                             navController.popBackStack()
@@ -84,6 +83,7 @@ fun EventPlannerApp(
                         useTwoPaneLayout = useTwoPaneLayout
                     )
                 }
+
                 composable<BoardMemberListRoute> {
                     BoardMemberList(
                         members = boardMembers,
@@ -96,12 +96,11 @@ fun EventPlannerApp(
                     )
                 }
 
-
                 composable<ArtistDetailsRoute> { backStackEntry ->
                     val route = backStackEntry.toRoute<ArtistDetailsRoute>()
                     val artistId = route.artistId
-                    ArtistDetails(artistId = artistId)
 
+                    ArtistDetails(artistId = artistId)
 
                 }
 
@@ -110,13 +109,12 @@ fun EventPlannerApp(
                     val memberId = route.boardMemberId
 
                     val member = boardMembers.find { it.id == memberId }
-                    if(member != null) {
+
+                    if (member != null) {
                         BoardMemberDetails(boardMember = member)
                     } else {
-                        Text("Member not found")
+                        Text("Board Member not found")
                     }
-
-
                 }
 
                 composable<OrdersRoute> {
@@ -124,14 +122,15 @@ fun EventPlannerApp(
                 }
 
                 composable<ToDosRoute> {
-                    ToDosScreen(
-                        useTwoPaneLayout = useTwoPaneLayout
-                    )
+                    ToDosScreen(useTwoPaneLayout = useTwoPaneLayout)
                 }
+
 
             }
         }
     }
 
 }
+
+
 

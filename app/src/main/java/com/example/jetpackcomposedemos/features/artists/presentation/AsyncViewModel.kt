@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.jetpackcomposedemos.features.artists.domain.AsyncRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
 import kotlin.time.Duration.Companion.seconds
 
 class AsyncViewModel(
@@ -14,9 +13,11 @@ class AsyncViewModel(
 
     fun loadArtists() {
         viewModelScope.launch {
-//            Thread.sleep(10_000)
+            // Thread.sleep(10_000)
             delay(10.seconds)
             repository.getArtists()
         }
     }
+
 }
+

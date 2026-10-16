@@ -13,39 +13,38 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Filter
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.Modifier
+import androidx.compose.material.icons.filled.Filter
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.jetpackcomposedemos.core.presentation.TextFilter
-import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
+import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
 
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun ArtistDirectory(
-    state : ArtistDirectoryState,
+    state: ArtistDirectoryState,
     useTwoPaneLayout: Boolean,
-    onBack:() -> Unit = {},
-    onArtistSelected: (Int) -> Unit ={},
+    onBack: () -> Unit = {},
+    onArtistSelected: (Int) -> Unit = {},
     onGenreChange: (String) -> Unit = {},
     onLocationChange: (String) -> Unit = {},
     onShowFilterChange: (Boolean) -> Unit = {}
@@ -53,30 +52,31 @@ fun ArtistDirectory(
 
     Scaffold(
         topBar = {
-            Column{  TopAppBar(
-                title = {
-                    Text("Available Artists")
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Return to dashboard"
-                        )
+            Column {
+                TopAppBar(
+                    title = {
+                        Text("Available Artists")
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Return to dashboard"
+                            )
+                        }
                     }
-                }
-            )
+                )
                 Text(
                     text = "Displaying ${state.displayedArtists.size} artists",
-                    modifier = Modifier.padding(0.dp,12.dp)
+                    modifier = Modifier.padding(0.dp, 12.dp)
                 )
             }
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("Show Filter")},
+                text = { Text("Show filter") },
                 icon = {
-                    Icon(Icons.Filled.Filter, contentDescription = "Filter")
+                    Icon(Icons.Filled.Filter, contentDescription = "Show filter")
                 },
                 onClick = {
                     onShowFilterChange(true)
@@ -85,14 +85,14 @@ fun ArtistDirectory(
         }
     ) { innerPadding ->
 
-        if (useTwoPaneLayout){
+        if (useTwoPaneLayout) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ){
-                Box( modifier = Modifier.weight(1f)){
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
                     ArtistList(
                         artists = state.displayedArtists,
                         onArtistSelected = onArtistSelected,
@@ -103,14 +103,12 @@ fun ArtistDirectory(
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
-                ){
-                    Text("Selected Artist")
-
+                ) {
+                    Text("Selected artist")
                     val selectedArtist = state.selectedArtist
-
                     AnimatedVisibility(
                         visible = selectedArtist != null,
-                        enter = fadeIn() + expandVertically(expandFrom = Alignment.Top) ,
+                        enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
                         exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
                     ) {
                         if (selectedArtist != null) {
@@ -119,9 +117,9 @@ fun ArtistDirectory(
                             )
                         }
                     }
+
                 }
             }
-
 
         } else {
             ArtistList(
@@ -132,26 +130,24 @@ fun ArtistDirectory(
         }
 
 
-
         if (state.showFilter) {
             ModalBottomSheet(
                 onDismissRequest = {
-                   onShowFilterChange(false)
+                    onShowFilterChange(false)
                 }
-            ){
+            ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
-                ){
+                ) {
                     Text(
-                        text = "Filter Artist",
+                        text = "Filter Artists",
                         style = MaterialTheme.typography.titleSmall
                     )
                     TextFilter(
                         label = "Genre",
                         filter = state.genreFilter,
                         onFilterChange = onGenreChange
-
                     )
                     TextFilter(
                         label = "Location",
@@ -160,25 +156,25 @@ fun ArtistDirectory(
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ){
+                    ) {
                         Button(
                             onClick = {
                                 onGenreChange("")
                                 onLocationChange("")
-
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        ){
+                            )
+                        ) {
                             Text("Clear")
                         }
+
                         Button(
                             onClick = {
                                 onShowFilterChange(false)
                             }
-                        ){
+                        ) {
                             Text("Close")
                         }
                     }
@@ -189,7 +185,9 @@ fun ArtistDirectory(
         }
 
     }
+
 }
+
 
 @Preview(
     name = "Compact View",
@@ -197,23 +195,28 @@ fun ArtistDirectory(
     heightDp = 844
 )
 @Composable
-fun CompactArtistDirectoryPreview(){
-  ArtistDirectory(
-      state = ArtistDirectoryState(),
-      useTwoPaneLayout = false
-  )
+fun CompactArtistDirectoryPreview() {
+    ArtistDirectory(
+        state = ArtistDirectoryState(),
+        useTwoPaneLayout = false,
+    )
 }
+
 @Preview(
     name = "Expanded View",
     widthDp = 900,
     heightDp = 844
 )
 @Composable
-fun ExpandedArtistDirectoryPreview(){
+fun ExpandedArtistDirectoryPreview() {
     ArtistDirectory(
         state = ArtistDirectoryState(),
-        useTwoPaneLayout = true
+        useTwoPaneLayout = true,
     )
 }
+
+
+
+
 
 

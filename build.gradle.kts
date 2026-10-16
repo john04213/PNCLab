@@ -7,3 +7,4 @@ plugins {
     alias(libs.plugins.devtools.ksp) apply false
     alias(libs.plugins.androidx.room) apply false
 }
+

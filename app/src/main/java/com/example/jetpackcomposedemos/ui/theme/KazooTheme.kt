@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -12,7 +13,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Typography
 
 private val KazooLightColors =
     lightColorScheme(
@@ -37,10 +37,9 @@ private val KazooLightColors =
 
         surface = Color(0xFFFFFBFE),
         onSurface = Color(0xFF1C1B1F),
+    )
 
-        )
 private val KazooDarkColors =
-
     darkColorScheme(
         primary = Color(0xFFD0BCFF),
         onPrimary = Color(0xFF381E72),
@@ -63,7 +62,8 @@ private val KazooDarkColors =
 
         surface = Color(0xFF1C1B1F),
         onSurface = Color(0xFFE6E1E5),
-        )
+    )
+
 val KazooShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
     small = RoundedCornerShape(6.dp),
@@ -72,36 +72,38 @@ val KazooShapes = Shapes(
     extraLarge = RoundedCornerShape(28.dp)
 )
 
+
 val KazooTypography = Typography(
     headlineMedium = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
         lineHeight = 34.sp,
-        ),
+    ),
 
     titleLarge = TextStyle(
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 26.sp,
-        ),
+    ),
 
     bodyLarge = TextStyle(
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        ),
+    ),
 
     labelLarge = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
-        )
+    )
 )
+
 
 @Composable
 fun KazooTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
-){
+) {
     val colorScheme = if (darkTheme) KazooDarkColors else KazooLightColors
 
     MaterialTheme(
@@ -111,3 +113,15 @@ fun KazooTheme(
         content = content
     )
 }
+
+
+
+
+
+
+
+
+
+
+
+

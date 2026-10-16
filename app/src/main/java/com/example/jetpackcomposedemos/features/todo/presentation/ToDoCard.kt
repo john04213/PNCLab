@@ -20,24 +20,21 @@ import com.example.jetpackcomposedemos.features.todo.domain.ToDo
 @Composable
 fun ToDoCard(
     toDo: ToDo,
-    onDoubleTap: () ->  Unit,
-
+    onDoubleTap: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
             .combinedClickable(
                 onClick = {},
                 onDoubleClick = onDoubleTap
-
             )
     ) {
-        Row (
+        Row(
             modifier = Modifier.padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
-
         ) {
-            if(toDo.completed) {
-                Icon (Icons.Default.Check, "Completed",
+            if (toDo.completed) {
+                Icon(Icons.Default.Check, "Completed",
                     tint = MaterialTheme.colorScheme.primary)
             } else {
                 Icon(Icons.Filled.CropSquare, "Not completed",
@@ -47,3 +44,5 @@ fun ToDoCard(
         }
     }
 }
+
+

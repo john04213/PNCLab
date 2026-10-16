@@ -27,4 +27,5 @@ object ArtistMapper {
             tags = ""
         )
     }
+
 }

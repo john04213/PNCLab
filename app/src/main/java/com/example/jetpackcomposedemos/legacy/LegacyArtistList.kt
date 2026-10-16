@@ -10,9 +10,8 @@ import com.example.jetpackcomposedemos.databinding.LegacyArtistListBinding
 @Composable
 fun LegacyArtistList(
     artists: List<Artist>,
-    onArtistSelected: (Int) -> Unit,
+    onArtistSelected: (Int) -> Unit
 ) {
-
     val adapter = remember(artists) {
         ArtistsViewAdapter(
             artists = artists,
@@ -23,13 +22,17 @@ fun LegacyArtistList(
     AndroidViewBinding(
         factory = LegacyArtistListBinding::inflate
     ) {
-        if(artistRecyclerView.layoutManager == null) {
+        if (artistRecyclerView.layoutManager == null) {
             artistRecyclerView.layoutManager = LinearLayoutManager(root.context)
         }
 
-        if(artistRecyclerView.adapter !== adapter) {
+        if (artistRecyclerView.adapter !== adapter) {
             artistRecyclerView.adapter = adapter
         }
     }
 
 }
+
+
+
+

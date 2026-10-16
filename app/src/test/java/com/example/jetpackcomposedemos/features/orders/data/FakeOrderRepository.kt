@@ -10,12 +10,15 @@ class FakeOrderRepository(
 
     var getOrdersCalls = 0
         private set
+
     override suspend fun getOrders(): List<Order> {
         getOrdersCalls++
-//        if(failure != null) {
+//        if (failure != null) {
 //            throw failure
-//        } else
-        failure?.let {throw it}
+//        }
+        failure?.let { throw it }
+
         return orders
     }
 }
+

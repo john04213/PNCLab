@@ -6,4 +6,5 @@ fun aUser(
     id: String = "user-1",
     username: String = "testuser",
     token: String = "test-token"
-) = User(id,username, token)
+) = User(id, username, token)
+

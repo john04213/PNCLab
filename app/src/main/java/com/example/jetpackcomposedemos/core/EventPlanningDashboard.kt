@@ -2,6 +2,7 @@ package com.example.jetpackcomposedemos.core
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -20,15 +21,15 @@ fun EventPlanningDashboard(
     onViewToDos: () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Event Planning Dashboard",
+            text = "Event Planning Operations",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.testTag("dashboard-title")
         )
+
         Button(
             onClick = onViewArtists,
             modifier = Modifier.fillMaxWidth()
@@ -36,10 +37,11 @@ fun EventPlanningDashboard(
         ) {
             Text("View Available Artists")
         }
+
         Button(
             onClick = onViewBoardMembers,
             modifier = Modifier.fillMaxWidth()
-                .testTag("view-board-members-button")
+                .testTag("view-board-button")
         ) {
             Text("View Board Members")
         }
@@ -47,18 +49,20 @@ fun EventPlanningDashboard(
         Button(
             onClick = onViewOrders,
             modifier = Modifier.fillMaxWidth()
-                .testTag("view-orders-button")
+                .testTag("view-order-button")
         ) {
             Text("View Orders")
         }
+
         Button(
             onClick = onViewToDos,
             modifier = Modifier.fillMaxWidth()
-                .testTag("view-todos-button")
+                .testTag("view-todo-button")
         ) {
-            Text("To Do List")
+            Text("View To-Dos")
         }
-    }
-}
 
+    }
+
+}
 

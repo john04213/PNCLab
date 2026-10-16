@@ -1,10 +1,10 @@
 package com.example.jetpackcomposedemos.features.boardmembers.presentation
 
+import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.fromHtml
@@ -30,7 +30,11 @@ fun BoardMemberDetails(boardMember: BoardMember) {
             modifier = Modifier.size(250.dp)
         )
 
-        // bio content is HTML
+        // bio content is HTML (but simple, formatting-related HTML)
         Text(AnnotatedString.fromHtml(boardMember.bio))
+
     }
+
 }
+
+
