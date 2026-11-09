@@ -7,7 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.jetpackcomposedemos.R
 import com.example.jetpackcomposedemos.core.LoadableState
 
 @Composable
@@ -15,7 +18,7 @@ fun OrdersScreen(
     useTwoPaneLayout: Boolean,
     viewModel: OrdersViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadData()
@@ -23,7 +26,7 @@ fun OrdersScreen(
 
     when (uiState) {
         is LoadableState.Loading -> CircularProgressIndicator()
-        is LoadableState.Empty -> Text("No orders found")
+        is LoadableState.Empty -> Text(stringResource(R.string.orders_empty))
         is LoadableState.Error -> {
             val errorMessage = (uiState as LoadableState.Error).message
             Text(

@@ -3,7 +3,9 @@ package com.example.jetpackcomposedemos.core
 import com.example.jetpackcomposedemos.BuildConfig
 import com.example.jetpackcomposedemos.features.artists.data.ArtistDataSource
 import com.example.jetpackcomposedemos.features.artists.data.RemoteArtistDataSource
+import com.example.jetpackcomposedemos.features.orders.data.MyOrdersDataSource
 import com.example.jetpackcomposedemos.features.orders.data.OrderDataSource
+import com.example.jetpackcomposedemos.features.orders.data.RemoteMyOrdersDataSource
 import com.example.jetpackcomposedemos.features.orders.data.RemoteOrderDataSource
 import dagger.Module
 import dagger.Provides
@@ -28,12 +30,18 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator
+    ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
+            .authenticator(tokenAuthenticator)
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(HttpLoggingInterceptor().apply {
                         level = HttpLoggingInterceptor.Level.BODY
+                        redactHeader("Authorization")
                     })
                 }
             }
@@ -87,4 +95,13 @@ object NetworkModule {
     }
 
 
+    @Provides
+    @Singleton
+    fun provideMyOrderDataSource(
+        @AdventureWorks retrofit: Retrofit
+    ): MyOrdersDataSource {
+        return retrofit.create(
+            RemoteMyOrdersDataSource::class.java
+        )
+    }
 }

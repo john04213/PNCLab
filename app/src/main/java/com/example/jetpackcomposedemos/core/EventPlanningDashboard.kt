@@ -11,55 +11,43 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.jetpackcomposedemos.R
 
 @Composable
 fun EventPlanningDashboard(
     onViewArtists: () -> Unit,
     onViewBoardMembers: () -> Unit,
     onViewOrders: () -> Unit,
-    onViewToDos: () -> Unit
+    onViewToDos: () -> Unit,
+    onSignOut: () -> Unit,
+    onSettings: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Event Planning Operations",
+            text = stringResource(R.string.dashboard_title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.testTag("dashboard-title")
         )
-
-        Button(
-            onClick = onViewArtists,
-            modifier = Modifier.fillMaxWidth()
-                .testTag("view-artists-button")
-        ) {
-            Text("View Available Artists")
-        }
 
         Button(
             onClick = onViewBoardMembers,
             modifier = Modifier.fillMaxWidth()
                 .testTag("view-board-button")
         ) {
-            Text("View Board Members")
+            Text(text = stringResource(R.string.dashboard_view_board_members))
         }
 
         Button(
-            onClick = onViewOrders,
+            onClick = onSignOut,
             modifier = Modifier.fillMaxWidth()
-                .testTag("view-order-button")
+                .testTag("sign-out-button")
         ) {
-            Text("View Orders")
-        }
-
-        Button(
-            onClick = onViewToDos,
-            modifier = Modifier.fillMaxWidth()
-                .testTag("view-todo-button")
-        ) {
-            Text("View To-Dos")
+            Text(text = stringResource(R.string.dashboard_sign_out))
         }
 
     }

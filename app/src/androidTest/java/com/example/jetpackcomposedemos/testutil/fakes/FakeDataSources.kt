@@ -2,6 +2,8 @@ package com.example.jetpackcomposedemos.testutil.fakes
 
 import com.example.jetpackcomposedemos.features.artists.data.ArtistDataSource
 import com.example.jetpackcomposedemos.features.artists.data.ArtistDto
+import com.example.jetpackcomposedemos.features.orders.data.MyOrderResponseDto
+import com.example.jetpackcomposedemos.features.orders.data.MyOrdersDataSource
 import com.example.jetpackcomposedemos.features.orders.data.OrderDataSource
 import com.example.jetpackcomposedemos.features.orders.data.OrderLineItemDto
 import com.example.jetpackcomposedemos.testutil.builders.anArtistDto
@@ -46,6 +48,33 @@ class FakeOrderDataSource @Inject constructor(): OrderDataSource {
         failure?.let { throw it }
         return lineItems
     }
+
+}
+
+@Singleton
+class FakeMyOrderDataSource @Inject constructor(): MyOrdersDataSource {
+
+    var response = MyOrderResponseDto(
+        customerId = 1,
+        page = 1,
+        pageSize = 100,
+        totalOrders = 0,
+        orders = emptyList()
+    )
+
+    var failure: Throwable? = null
+    var lastCustomerId: Int? = null
+
+    override suspend fun getOrders(
+        customerId: Int,
+        page: Int,
+        pageSize: Int): MyOrderResponseDto {
+
+        lastCustomerId = customerId
+        failure?.let { throw it }
+        return response
+    }
+
 
 }
 

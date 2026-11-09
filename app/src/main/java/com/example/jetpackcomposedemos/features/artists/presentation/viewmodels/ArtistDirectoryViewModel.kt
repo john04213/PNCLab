@@ -1,5 +1,6 @@
 package com.example.jetpackcomposedemos.features.artists.presentation.viewmodels
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
@@ -18,12 +19,17 @@ import kotlinx.coroutines.CancellationException
 @HiltViewModel
 class ArtistDirectoryViewModel @Inject constructor(
     private val getAvailableArtists: GetAvailableArtistsUseCase,
-    private val refreshArtists: RefreshArtistsUseCase
+    private val refreshArtists: RefreshArtistsUseCase,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle()
 ): ViewModel() {
 
     // keep the actual mutable state value private
     private val _uiState = MutableStateFlow(
-        ArtistDirectoryState()
+        ArtistDirectoryState(
+            genreFilter = savedStateHandle[GENRE_KEY]  ?: "",
+            locationFilter = savedStateHandle[LOCATION_KEY] ?: "",
+            searchQuery = savedStateHandle[SEARCH_KEY_] ?: ""
+        )
     )
 
     // expose (publicly) a read-only view of the state object
@@ -88,8 +94,13 @@ class ArtistDirectoryViewModel @Inject constructor(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
+    fun updateSearchQuery(query: String) {
+        savedStateHandle[SEARCH_KEY_] = query
+        _uiState.update { it.copy(searchQuery = query) }
+    }
 
     fun updateGenreFilter(genre: String) {
+        savedStateHandle[GENRE_KEY] = genre
 
         // this approach is vulnerable to race conditions
         // (usually triggered by async code)
@@ -105,6 +116,7 @@ class ArtistDirectoryViewModel @Inject constructor(
     }
 
     fun updateLocationFilter(location: String) {
+        savedStateHandle[LOCATION_KEY] = location
         _uiState.update { currentState ->
             currentState.copy(
                 locationFilter = location
@@ -126,6 +138,12 @@ class ArtistDirectoryViewModel @Inject constructor(
                 selectedArtistId = artistId
             )
         }
+    }
+
+    companion object {
+        const val GENRE_KEY ="genreFilter"
+        const val LOCATION_KEY = "locationFilter"
+        const val SEARCH_KEY_ = "searchQuery"
     }
 
 }

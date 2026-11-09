@@ -1,0 +1,4461 @@
+﻿diff --git a/mine/.gitignore b/mine/.gitignore
+new file mode 100644
+index 0000000..aa724b7
+--- /dev/null
++++ b/mine/.gitignore
+@@ -0,0 +1,15 @@
++*.iml
++.gradle
++/local.properties
++/.idea/caches
++/.idea/libraries
++/.idea/modules.xml
++/.idea/workspace.xml
++/.idea/navEditor.xml
++/.idea/assetWizardSettings.xml
++.DS_Store
++/build
++/captures
++.externalNativeBuild
++.cxx
++local.properties
+diff --git a/prof/Module15StudentGuide.pdf b/prof/Module15StudentGuide.pdf
+deleted file mode 100644
+index e7fbb49..0000000
+--- a/prof/Module15StudentGuide.pdf
++++ /dev/null
+@@ -1,590 +0,0 @@
+-MODULE 15
+-
+-Testing &
+-Optimization
+-
+-JUnit, Espresso
+-
+-Phase 03 | Android Development with Kotlin
+-Testing Strategy and Local Unit Tests
+-
+-        • Apply the test pyramid to decide which kind of
+-           test each piece of the PNC Mobile app needs
+-
+-        • Choose between fakes, stubs, and mocks and
+-           justify the choice
+-
+-        • Write deterministic JUnit tests using Arrange, Act,
+-           Assert with behavior-based names
+-
+-        • Cover edge cases with parameterized tests and
+-           test data builders
+-
+-                                                                                                                                                ©Logical Imagination Group LLC
+-The Test Pyramid for Mobile
+-
+-• Local unit tests run on the JVM in milliseconds: the wide base
+-• Integration tests combine real components such as Room plus a repository
+-• UI and end-to-end tests run on a device or emulator: few, slow, valuable
+-• Source sets: src/test runs locally, src/androidTest runs on a device
+-
+-Layer                      Test Type           Source set                Speed
+-Mappers, Validators        Local unit          src/test                  ms
+-UseCases, ViewModels       Local unit + fakes  src/text                  ms
+-Repository + Room          Integration         src/androidTest           100s of ms
+-Retrofit + interceptors    Integration         src/test (MockWebServer)  ms
+-Screens (Compose)          UI Test             src/androidTest           seconds
+-Login to transfer journey  End to end          src/androidTest           10s of seconds
+-
+-                                                                            ©Logical Imagination Group LLC
+-Anatomy of a Good Unit Test
+-
+-Arrange, Act, Assert in three visible blocks      Name tests after behavior:
+-                                                  returnsErrorWhenAmountExceedsBalance
+-
+-One behavior per test; a failure should point to  Deterministic: no real clock, network,
+-one cause                                         randomness, or shared state
+-
+-                                                  ©Logical Imagination Group LLC
+-Anatomy of a Good Unit Test (code)
+-
+-class MoneyTest {
+-      @Test
+-      fun addingTwoAmountsSumsCentsExactly() {
+-            val tenCents = Money(10)
+-            val twentyCents = Money(20)
+-            val total = tenCents + twentyCents
+-            assertEquals(Money(30), total)
+-      }
+-
+-      @Test
+-      fun formatsUsingGivenLocale() {
+-
+-            assertEquals("$1,234.50", Money(123450).format(Locale.US))
+-      }
+-}
+-
+-                                                                        ©Logical Imagination Group LLC
+-Fakes, Stubs, and Mocks
+-
+-Stub returns canned answers; a fake is a      Mock records calls so you can verify interactions
+-lightweight working implementation
+-
+-Prefer fakes for repositories: tests survive  Use MockK to verify a boundary call that has no
+-refactoring                                   observable result
+-
+-                                              ©Logical Imagination Group LLC
+-Fakes, Stubs, and Mocks (code)
+-
+-class FakeAccountsRepository : AccountsRepository {
+-      private val accounts = MutableStateFlow<List<Account>>(emptyList())
+-      var refreshResult: ApiResult<Unit> = ApiResult.Success(Unit)
+-      var refreshCount = 0
+-      fun emit(list: List<Account>) { accounts.value = list }
+-      override fun observeAccounts(): Flow<List<Account>> = accounts
+-      override suspend fun refresh(): ApiResult<Unit> { refreshCount++; return refreshResult }
+-
+-}
+-
+-@Test fun sendsAnalyticsOnce() {
+-      val analytics = mockk<Analytics>(relaxed = true)
+-      TransferScreenLogic(analytics).onSubmit()
+-      verify(exactly = 1) { analytics.track("transfer_submitted") }
+-
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Parameterized Tests
+-
+-• Boundary values find most bugs: zero, one, limit, limit plus one
+-• Parameterized tests run one body against a table of cases
+-• Provide a companion object inside the test class
+-
+-     • This object should provide a method that will return a list of parameter sets for the different test runs
+-     • Those parameter sets will be provided as constructor parameters to the class
+-     • The @Test function inside the class should use the parameters to execute the code and make the
+-
+-        assertion(s)
+-
+-• Test data builders hide irrelevant fields and show only what matters
+-• Name each case so a failure identifies the input
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Edge Cases: Parameterized Tests and Builders
+-
+-@RunWith(Parameterized::class)
+-class AmountRuleTest(private val amount: Long,
+-
+-                                    private val balance: Long,
+-                                    private val ok: Boolean) {
+-      companion object {
+-             @JvmStatic @Parameterized.Parameters(name = "amount={0} balance={1} -> {2}")
+-             fun cases() = listOf(
+-                   arrayOf(0L, 100L, false), arrayOf(1L, 100L, true),
+-                   arrayOf(100L, 100L, true), arrayOf(101L, 100L, false)
+-             )
+-      }
+-      @Test fun validates() = assertEquals(ok, AmountRule.isValid(amount, balance))
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Lesson 1
+-
+-1. Where does a transfer amount rule belong in the test   2. Why prefer a fake repository over a mock in ViewModel
+-pyramid?                                                  tests?
+-
+-A) End-to-end UI test                                     A) Fakes are faster to compile
+-B) Local JVM unit test                                    B) Fakes test outcomes, so tests survive refactoring
+-C) Manual test only                                       C) Mocks cannot return values
+-D) Screenshot test                                        D) Fakes need the network
+-
+-3. Which inputs best find an off-by-one bug in an amount  4. What makes a unit test non-deterministic?
+-rule?
+-                                                          A) Using assertEquals
+-A) Random numbers                                         B) Reading the real clock or network
+-B) Boundary values and their neighbors                    C) Using Kotlin
+-C) Only typical values                                    D) Naming it clearly
+-D) Only negative numbers
+-
+-                                                          ©Logical Imagination Group LLC
+-Testing ViewModels, Coroutines, and Flow
+-
+-               • Control virtual time with runTest and test
+-                  dispatchers
+-
+-               • Replace Dispatchers.Main in ViewModel tests with
+-                  a reusable rule
+-
+-               • Assert Flow emissions in order with Turbine
+-               • Verify loading, content, and error state transitions
+-
+-                  against a fake repository
+-
+-                                                                                                                                                            ©Logical Imagination Group LLC
+-runTest and Virtual Time
+-
+-• runTest skips delays by advancing a virtual clock
+-• StandardTestDispatcher queues work until you advance it
+-• UnconfinedTestDispatcher runs eagerly, useful for simple state tests
+-• Never use real delays or Thread.sleep in tests
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-runTest and Virtual Time
+-
+-@Test
+-
+-fun retryBacksOffExponentially() = runTest {
+-
+-   var attempts = 0
+-
+-   val result = async {
+-
+-       retryGet(times = 3) { attempts++; if (attempts < 3) throw IOException() else "ok" }
+-
+-   }
+-
+-   advanceUntilIdle()    // skips all the delays instantly
+-
+-   assertEquals("ok", result.await())
+-
+-   assertTrue(currentTime >= 500) // virtual time really elapsed
+-
+-}
+-
+-                                                                  ©Logical Imagination Group LLC
+-Replacing the Main Dispatcher
+-
+-• viewModelScope uses Dispatchers.Main, which does not exist on the JVM
+-• Set Dispatchers.setMain before the test and reset after
+-• Package this as a JUnit rule used by every ViewModel test
+-• Share one scheduler between the rule and runTest
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Replacing the Main Dispatcher
+-
+-class MainDispatcherRule(
+-      val dispatcher: TestDispatcher = StandardTestDispatcher()
+-
+-) : TestWatcher() {
+-      override fun starting(description: Description) = Dispatchers.setMain(dispatcher)
+-      override fun finished(description: Description) = Dispatchers.resetMain()
+-
+-}
+-
+-class AccountsViewModelTest {
+-      @get:Rule val main = MainDispatcherRule()
+-      // runTest(main.dispatcher.scheduler) shares the scheduler when needed
+-
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Testing Flow with Turbine
+-
+-• test { } collects a Flow and lets you await each item
+-• awaitItem suspends until the next emission or times out
+-• expectNoEvents proves nothing else was emitted
+-• StateFlow always has an initial value to consume first
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Testing Flow with Turbine
+-
+-@Test
+-fun emitsLoadingThenContent() = runTest {
+-
+-      val repo = FakeAccountsRepository()
+-      val vm = AccountsViewModel(repo)
+-
+-      vm.ui.test {
+-             assertEquals(emptyList<Account>(), awaitItem().accounts) // initial
+-             repo.emit(listOf(anAccount("a1")))
+-             assertEquals("a1", awaitItem().accounts.single().id)
+-             cancelAndIgnoreRemainingEvents()
+-
+-      }
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Testing State Transitions End to End
+-
+-Arrange the fake, trigger the action, assert the  Cover the happy path, the failure path, and
+-state sequence                                    recovery
+-
+-Assert that cached data stays visible when        Test one-time events separately from persistent
+-refresh fails                                     state
+-
+-                                                  ©Logical Imagination Group LLC
+-Testing State Transitions End to End (code)
+-
+-@Test
+-
+-fun failedRefreshKeepsCachedAccountsAndShowsError() = runTest {
+-
+-   val repo = FakeAccountsRepository().apply {
+-
+-       emit(listOf(anAccount("a1")))
+-
+-       refreshResult = ApiResult.NetworkError
+-
+-   }
+-
+-   val vm = AccountsViewModel(repo)
+-
+-   vm.ui.test {
+-
+-       skipItems(1)                      // initial snapshot
+-
+-       vm.refresh()
+-
+-       val refreshing = awaitItem(); assertTrue(refreshing.refreshing)
+-
+-       val failed = awaitItem()
+-
+-       assertFalse(failed.refreshing)
+-
+-       assertEquals(1, failed.accounts.size)    // cache still visible
+-
+-       assertEquals("No connection. Check your network and retry.", failed.error)
+-
+-       cancelAndIgnoreRemainingEvents()
+-
+-   }
+-
+-}
+-
+-                                                                                   ©Logical Imagination Group LLC
+-Lesson 2
+-
+-1. Why does a ViewModel test fail on the JVM without  2. What does runTest do with delay(5000)?
+-setup?
+-                                                      A) Waits five real seconds
+-A) Kotlin is not supported                            B) Advances a virtual clock instantly
+-B) Dispatchers.Main has no Android looper on the JVM  C) Ignores it and fails
+-C) Hilt is missing                                    D) Runs it on the main thread
+-D) Room is missing
+-
+-3. What is Turbine's main advantage for Flow tests?   4. What should a test assert when a refresh fails and cached
+-                                                      data exists?
+-A) It makes Flow faster
+-B) It asserts emissions one at a time, in order       A) The list is empty
+-C) It replaces Room                                   B) The cached list is still present and an error is set
+-D) It removes the need for fakes                      C) The app crashes
+-                                                      D) Nothing
+-
+-                                                      ©Logical Imagination Group LLC
+-Compose UI Tests and Espresso
+-
+-  • Write Compose UI tests with finders, assertions,
+-     and actions
+-
+-  • Design composables to be testable through state
+-     hoisting and test tags
+-
+-  • Handle synchronization with idling and waitUntil
+-     instead of sleeps
+-
+-  • Know when to use Espresso for View-based
+-     screens, intents, and interop
+-
+-                                                                                                                                      ©Logical Imagination Group LLC
+-The Semantics Tree and Compose Test Rules
+-
+-• Compose tests query the semantics  class AccountRowTest {
+-  tree, not pixels                     @get:Rule val rule = createComposeRule()
+-                                       @Test fun showsNameAndMaskedNumber() {
+-• createComposeRule hosts a              rule.setContent {
+-  composable without an Activity              AccountRow(anAccount(), onClick = {})
+-                                         }
+-• Finders: onNodeWithText,               rule.onNodeWithText("Wallet")
+-  onNodeWithTag,                              .assertIsDisplayed()
+-  onNodeWithContentDescription           rule.onNodeWithText("****1234")
+-                                              .assertIsDisplayed()
+-• Assertions and actions:                  }
+-  assertIsDisplayed, performClick,
+-  performTextInput                   }
+-
+-                                           ©Logical Imagination Group LLC
+-Designing Composables for Testability
+-
+-• Stateless composables take state and callbacks as parameters
+-• A stateful wrapper connects them to the ViewModel
+-• Test the stateless one with fabricated state
+-• Use testTag only when text and descriptions are not stable
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Designing Composables for Testability
+-
+-@Composable
+-fun AccountsContent(ui: AccountsUi, onRetry: () -> Unit, onOpen: (String) -> Unit) {
+-
+-      Column {
+-             if (ui.error != null) ErrorBanner(ui.error, onRetry)
+-             if (ui.refreshing) CircularProgressIndicator(Modifier.testTag("refreshing"))
+-             LazyColumn { items(ui.accounts, key = { it.id }) { AccountRow(it) { onOpen(it.id) }
+-
+-      }
+-}
+-
+-@Test fun bannerAppearsWithCachedRowsStillVisible() {
+-      rule.setContent { AccountsContent(AccountsUi(listOf(anAccount()), error = "No
+-
+-connection"), {}, {}) }
+-      rule.onNodeWithText("No connection").assertIsDisplayed()
+-      rule.onNodeWithText("Wallet").assertIsDisplayed()
+-
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Synchronization Without Sleeping
+-
+-• The Compose rule waits for recomposition and animations automatically
+-• waitUntil polls a condition with a timeout for async work
+-• Espresso uses IdlingResource to know when background work is done
+-• Thread.sleep in a test is a bug waiting for a slow CI machine
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Synchronization Without Sleeping
+-
+-@Test fun rowsAppearAfterRefresh() {
+-      rule.setContent { AccountsScreen(viewModel = fakeViewModel) }
+-      rule.waitUntil(timeoutMillis = 5_000) {
+-             rule.onAllNodesWithText("Wallet").fetchSemanticsNodes().isNotEmpty()
+-      }
+-      rule.onNodeWithText("Wallet").assertIsDisplayed()
+-
+-}
+-
+-// Espresso: register OkHttp as an idling resource so Espresso waits for requests
+-IdlingRegistry.getInstance().register(OkHttp3IdlingResource.create("okhttp", client))
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Espresso: Views, Intents, and Interop
+-
+-• Espresso drives View-based screens: onView, perform, check
+-• Espresso-Intents stubs and verifies external intents
+-• Use it for legacy screens, WebView, and Compose interop hosts
+-• Same discipline: no sleeps, no shared state, stable matchers
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Espresso: Views, Intents, and Interop
+-
+-@get:Rule val intents = IntentsRule()
+-@Test fun callSupportLaunchesDialer() {
+-
+-      intending(hasAction(Intent.ACTION_DIAL))
+-            .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+-
+-      onView(withId(R.id.callSupport)).perform(click())
+-      intended(allOf(hasAction(Intent.ACTION_DIAL), hasData("tel:18005551234")))
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Lesson 3                                                   2. Why hoist state out of a composable?
+-
+-       1. What do Compose UI tests query?                  A) Smaller APK
+-                                                           B) So tests and callers can supply any state
+-        A) Pixels                                          C) Required by Hilt
+-        B) The semantics tree                              D) Faster compilation
+-        C) The Gradle model
+-        D) Logcat                                          4. When is Espresso the right tool?
+-
+-       3. What replaces Thread.sleep in a UI test?         A) Never
+-                                                           B) For View-based screens, WebView, and verifying external
+-        A) A longer sleep                                  intents
+-        B) waitUntil on a condition or an idling resource  C) Only for unit tests
+-        C) Nothing                                         D) Only for Compose
+-        D) A second emulator
+-                                                                                                                                 ©Logical Imagination Group LLC
+-Integration Tests with Hilt, Flakiness, and CI
+-
+-                • Replace production modules with fakes in
+-                   instrumented tests using Hilt
+-
+-                • Write an integration test that exercises Retrofit,
+-                   Room, and the repository together
+-
+-                • Diagnose and eliminate the common causes of
+-                   flaky tests
+-
+-                • Run the suite on a managed device and read the
+-                   reports
+-
+-                                                                                                                                                             ©Logical Imagination Group LLC
+-Hilt in Tests
+-
+-• @HiltAndroidTest and HiltAndroidRule build a test component
+-• A custom test runner swaps in HiltTestApplication
+-• @TestInstallIn replaces a production module with a test module
+-• Fakes are provided at the module boundary, not inside classes
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Hilt in Tests
+-
+-class HiltTestRunner : AndroidJUnitRunner() {
+-   override fun newApplication(cl: ClassLoader?, name: String?, ctx: Context?): Application =
+-      super.newApplication(cl, HiltTestApplication::class.java.name, ctx)
+-
+-}
+-
+-@Module
+-@TestInstallIn(
+-
+-   components = [SingletonComponent::class],
+-   replaces = [RepositoryModule::class]
+-)
+-object FakeRepositoryModule {
+-
+-      @Provides @Singleton fun repo(): AccountsRepository =
+-             FakeAccountsRepository().apply { emit(listOf(anAccount())) }
+-
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-What Integration Means
+-
+-• The boundary rule: fake the edges (network, disk, time, third-party SDKs); keep everything
+-  else real.
+-
+-     • That usually means fake data sources, an in-memory Room database, and real repositories, use cases,
+-        view models and composables
+-
+-• Narrow versus broad:
+-
+-     • narrow = two or three real collaborators (DAO plus database)
+-     • broad = a whole feature through the UI
+-
+-• Locate each on the pyramid and talk about speed, diagnosis and confidence.
+-
+-39  ©Logical Imagination Group LLC
+-Integration: Network, Database, Repository Together
+-
+-• Use the real Retrofit stack against MockWebServer
+-• Use a real in-memory Room database
+-• Assert the final observable result, not each internal call
+-• Cover the failure that links two layers, such as bad JSON leaving the cache intact
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Integration: Network, Database, Repository Together
+-
+-@Test fun malformedResponseLeavesCacheIntact() = runTest {
+-      dao.upsertAll(listOf(sampleEntity("a1")))
+-      server.enqueue(MockResponse().setBody("{bad json"))
+-      val result = repo.refresh()
+-      assertEquals(ApiResult.ParseError, result)
+-      assertEquals(listOf("a1"), repo.observeAccounts().first().map { it.id })
+-
+-}
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Taming Flaky Tests
+-
+-• Causes: timing, shared state, animations, real network, test order
+-• Disable animations in testOptions for instrumented runs
+-• Use Android Test Orchestrator to isolate each test in a fresh process
+-• Quarantine flaky tests, then fix them; never ignore them silently
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Taming Flaky Tests
+-
+-// app/build.gradle.kts
+-android {
+-
+-      defaultConfig { testInstrumentationRunner = "com.pnc.mobile.HiltTestRunner"
+-             testInstrumentationRunnerArguments["clearPackageData"] = "true" }
+-
+-      testOptions {
+-             animationsDisabled = true
+-             execution = "ANDROIDX_TEST_ORCHESTRATOR"
+-
+-      }
+-}
+-dependencies { androidTestUtil("androidx.test:orchestrator:1.5.1") }
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Continuous Integration and Managed Devices
+-
+-Gradle Managed Devices create and cache          Same command locally and in CI: ./gradlew
+-emulators from code                              pixel6Api34DebugAndroidTest
+-
+-Run unit tests on every commit; run UI tests on  Publish HTML reports and keep failing
+-pull requests or nightly                         screenshots as artifacts
+-
+-                                                 ©Logical Imagination Group LLC
+-Continuous Integration and Managed Devices (code)
+-
+-android {
+-      testOptions {
+-             managedDevices {
+-                   localDevices {
+-                          create("pixel6Api34") {
+-                                 device = "Pixel 6"
+-                                 apiLevel = 34
+-                                 systemImageSource = "aosp"
+-                          }
+-                   }
+-             }
+-      }
+-
+-}
+-// Run: ./gradlew pixel6Api34DebugAndroidTest
+-// Reports: app/build/reports/androidTests/managedDevice/
+-
+-                                                                                                                                                                                                ©Logical Imagination Group LLC
+-Lesson 4
+-
+-1. What does @TestInstallIn do?                                  2. Why is an integration test valuable in addition to mapper
+-                                                                 unit tests?
+-A) Installs the APK
+-B) Replaces a production Hilt module with a test module          A) It is faster
+-C) Runs tests in parallel                                        B) It catches mismatches across layers such as DTO field names
+-D) Disables Hilt                                                 C) It replaces all unit tests
+-                                                                 D) It needs no setup
+-
+-3. What is the right response to a flaky test?                   4. Why define emulators with Gradle Managed Devices?
+-
+-A) Add a longer sleep                                            A) Smaller APK
+-B) Find the unsynchronized condition or shared state and fix it  B) Local and CI runs use the same reproducible device
+-C) Delete it quietly                                             C) Faster compilation
+-D) Rerun until green                                             D) Required by Compose
+-
+-                                                                 ©Logical Imagination Group LLC
+-
+diff --git a/mine/README.md b/mine/README.md
+new file mode 100644
+index 0000000..93258aa
+--- /dev/null
++++ b/mine/README.md
+@@ -0,0 +1 @@
++﻿# PNCLab
+diff --git a/prof/app/build.gradle.kts b/mine/app/build.gradle.kts
+index 867723b..c4319c5 100644
+--- a/prof/app/build.gradle.kts
++++ b/mine/app/build.gradle.kts
+@@ -24,7 +24,7 @@ android {
+         versionCode = 1
+         versionName = "1.0"
+ 
+-        testInstrumentationRunner = "PKG.jetpackcomposedemos.HiltTestRunner"
++        testInstrumentationRunner = "PKG.jetpackcomposedemos.testutil.HiltTestRunner"
+         buildConfigField("String", "BASE_URL", "\"https://kazoopromotions.com/api/\"")
+         buildConfigField("String", "AW_BASE_URL", "\"https://api.bootcampcentral.com/api/\"")
+     }
+@@ -57,14 +57,15 @@ dependencies {
+     implementation(platform(libs.androidx.compose.bom))
+     implementation(libs.androidx.activity.compose)
+     implementation(libs.androidx.compose.animation)
+-    implementation(libs.androidx.compose.foundation.layout)
+     implementation(libs.androidx.compose.material3)
+     implementation(libs.androidx.compose.ui)
+     implementation(libs.androidx.compose.ui.graphics)
+     implementation(libs.androidx.compose.ui.tooling.preview)
+     implementation(libs.androidx.core.ktx)
+     implementation(libs.androidx.lifecycle.runtime.ktx)
++    implementation(libs.androidx.material3)
+     implementation(libs.androidx.recyclerview)
++    androidTestImplementation(libs.androidx.runner)
+     testImplementation(libs.junit)
+     androidTestImplementation(platform(libs.androidx.compose.bom))
+     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+@@ -92,6 +93,8 @@ dependencies {
+     androidTestImplementation(libs.espresso.contrib)
+     androidTestImplementation(libs.hilt.android.testing)
+     kspAndroidTest(libs.hilt.compiler)
++    androidTestImplementation(libs.hilt.android.testing)
++    kspAndroidTest(libs.hilt.compiler)
+     androidTestImplementation(libs.kotlinx.coroutines.test)
+     androidTestImplementation(libs.room.testing)
+     implementation(platform(libs.kotlinx.coroutines.bom))
+@@ -100,9 +103,3 @@ dependencies {
+     androidTestImplementation(libs.turbine)
+     androidTestImplementation(libs.androidx.junit.ktx)
+ }
+\ No newline at end of file
+-
+-configurations.configureEach {
+-    resolutionStrategy {
+-        force(libs.androidx.espresso.core)
+-    }
+-}
+diff --git a/prof/app/schemas/com.pnc.jetpackcomposedemos.core.room.AppDatabase/1.json b/mine/app/schemas/com.example.jetpackcomposedemos.core.room.AppDatabase/1.json
+similarity index 96%
+rename from prof/app/schemas/com.pnc.jetpackcomposedemos.core.room.AppDatabase/1.json
+rename to mine/app/schemas/com.example.jetpackcomposedemos.core.room.AppDatabase/1.json
+index d4e4fc4..29f8f9a 100644
+diff --git a/prof/app/schemas/com.pnc.jetpackcomposedemos.core.room.AppDatabase/2.json b/mine/app/schemas/com.example.jetpackcomposedemos.core.room.AppDatabase/2.json
+similarity index 96%
+rename from prof/app/schemas/com.pnc.jetpackcomposedemos.core.room.AppDatabase/2.json
+rename to mine/app/schemas/com.example.jetpackcomposedemos.core.room.AppDatabase/2.json
+index 090bb01..d0cabd7 100644
+diff --git a/prof/app/schemas/com.pnc.jetpackcomposedemos.core.room.AppDatabase/3.json b/mine/app/schemas/com.example.jetpackcomposedemos.core.room.AppDatabase/3.json
+similarity index 96%
+rename from prof/app/schemas/com.pnc.jetpackcomposedemos.core.room.AppDatabase/3.json
+rename to mine/app/schemas/com.example.jetpackcomposedemos.core.room.AppDatabase/3.json
+index 14d5397..2f6555c 100644
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboardTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboardTest.kt
+index 3320a4e..ccd5a7a 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboardTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboardTest.kt
+@@ -23,12 +23,12 @@ class EventPlanningDashboardTest {
+     fun setUp(){
+         //render the composable being tested
+         composeRule.setContent{
+-            KazooTheme() {
++            KazooTheme {
+                 EventPlanningDashboard(
+-                    onViewArtists = { calls.add("artists") },
+-                    onViewBoardMembers = { calls.add("board members") },
+-                    onViewOrders = { calls.add("orders") },
+-                    onViewToDos = { calls.add("todos") }
++                    onViewArtists = { calls.add("onViewArtists") },
++                    onViewBoardMembers = { calls.add("onViewBoardMembers") },
++                    onViewOrders = { calls.add("onViewOrders") },
++                    onViewToDos = { calls.add("onViewToDos") }
+                 )
+             }
+         }
+@@ -45,10 +40,10 @@ class EventPlanningDashboardTest {
+     @Test
+     fun givenDashboard_whenShown_thenDisplaysAllFourButtons(){
+         listOf(
+-            "view-artist-button",
+-            "view-board-button",
++            "view-artists-button",
++            "view-board-members-button",
+             "view-orders-button",
+-            "view-todo-button"
++            "view-todos-button"
+         ).forEach { label ->
+             composeRule.onNode(hasTestTag(label)).assertIsDisplayed()
+         }
+@@ -56,21 +51,19 @@ class EventPlanningDashboardTest {
+ 
+     @Test
+     fun givenDashboard_whenViewArtistsTapped_thenOnViewArtistsIsCalled(){
+-
+-        composeRule.onNode(hasTestTag("view-artist-button")).performClick()
+-
+-        assertEquals(listOf("artists"), calls)
++        composeRule.onNode(hasTestTag("view-artists-button")).performClick()
++        assertEquals(listOf("onViewArtists"), calls)
+     }
+ 
+     @Test
+-    fun givenDashboard_whenEachButtonIsTapped_thenOnlyItsOwnCallbackIsCalled() {
++    fun givenDashBoard_whenEachButtonIsTapped_thenOnlyItsOwnCallbackIsCalled(){
+         val expectations = mapOf(
+-            "view-artists-button" to "artists",
+-            "view-board-button" to "board members",
+-            "view-orders-button" to "orders",
+-            "view-todo-button" to "todos"
+-        )
++            "view-artists-button" to "onViewArtists",
++            "view-board-members-button" to "onViewBoardMembers",
++            "view-orders-button" to "onViewOrders",
++            "view-todos-button" to "onViewToDos"
+ 
++        )
+         expectations.forEach { (label, expectedCall) ->
+             calls.clear()
+             composeRule.onNode(hasTestTag(label)).performClick()
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/room/AppDatabaseMigrationTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/room/AppDatabaseMigrationTest.kt
+index bd0889a..63179fd 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/room/AppDatabaseMigrationTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/core/room/AppDatabaseMigrationTest.kt
+@@ -17,10 +17,9 @@ class AppDatabaseMigrationTest {
+         AppDatabase::class.java
+     )
+ 
+-    // ----------- test migrating from version 1 to version 2
++    // ---------------- test migrating from version 1 to version 2 ----------------
+     @Test
+-    fun migrate1To2_keepsExistingToDosAndAddsTheOrderTables() {
+-
++    fun migrate1to2_keepsExistingToDosAndAddsTheOrderTable() {
+         helper.createDatabase(testDbName,1).apply {
+             execSQL("INSERT INTO todo (id, title, completed) VALUES (1, 'Buy milk', 0)")
+             close()
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/HiltSetupSmokeTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/HiltSetupSmokeTest.kt
+index 86bc55f..1a4cc5d 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/HiltSetupSmokeTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/HiltSetupSmokeTest.kt
+@@ -25,7 +24,7 @@ class HiltSetupSmokeTest {
+     @Inject lateinit var artistDataSource: ArtistDataSource
+     @Inject lateinit var orderDataSource: OrderDataSource
+     @Inject lateinit var artistRepository: ArtistRepository
+-    @Inject lateinit var database: AppDatabase
++    @Inject lateinit var dataBase: AppDatabase
+ 
+     @Before
+     fun setUp() {
+@@ -34,21 +33,20 @@ class HiltSetupSmokeTest {
+ 
+     @After
+     fun tearDown() {
+-        database.close()
++        dataBase.close()
+     }
+ 
+     @Test
+     fun givenTestModules_whenInjected_thenTheNetworkEdgesAreFakes() {
+-
+         assertTrue(artistDataSource is FakeArtistDataSource)
+         assertTrue(orderDataSource is FakeOrderDataSource)
+-
+     }
+ 
++
+     @Test
+     fun givenTestModules_whenInjected_thenTheDatabaseIsInMemory() {
+-        // A file-backed database has a name; an in-memory one has none
+-        assertNull(database.openHelper.databaseName)
++        // a file-backed database has a name:  an in-memory one has none
++        assertNull(dataBase.openHelper.databaseName)
+     }
+ 
+ 
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestDatabaseModule.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestDatabaseModule.kt
+index 1616867..b8e0511 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestDatabaseModule.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestDatabaseModule.kt
+@@ -2,11 +2,8 @@
+ 
+ import android.content.Context
+ import androidx.room.Room
+-import PKG.jetpackcomposedemos.core.room.AppDatabase
+ import PKG.jetpackcomposedemos.core.room.DatabaseModule
+-import PKG.jetpackcomposedemos.features.artists.data.local.ArtistDao
+-import PKG.jetpackcomposedemos.features.orders.data.local.OrderDao
+-import PKG.jetpackcomposedemos.features.todo.data.ToDoDao
++import PKG.jetpackcomposedemos.core.room.AppDatabase
+ import dagger.Module
+ import dagger.Provides
+ import dagger.hilt.android.qualifiers.ApplicationContext
+@@ -30,16 +26,15 @@ object TestDatabaseModule {
+ 
+     @Provides
+     @Singleton
+-    fun provideToDoDao(db: AppDatabase): ToDoDao = db.toDoDao()
++    fun providesToDoDao(db: AppDatabase) = db.toDoDao()
+ 
+     @Provides
+     @Singleton
+-    fun provideOrderDao(db: AppDatabase): OrderDao = db.orderDao()
++    fun providesOrderDao(db: AppDatabase) = db.orderDao()
+ 
+     @Provides
+     @Singleton
+-    fun provideArtistDao(db: AppDatabase): ArtistDao = db.artistDao()
+-
++    fun providesArtistDap(db: AppDatabase) = db.artistDao()
+ 
+ 
+ }
+\ No newline at end of file
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestNetworkModule.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestNetworkModule.kt
+index af2c08d..61d436b 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestNetworkModule.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/di/TestNetworkModule.kt
+@@ -1,14 +1,14 @@
+ ﻿package PKG.jetpackcomposedemos.di
+ 
++import dagger.Module
++import dagger.hilt.testing.TestInstallIn
++import dagger.hilt.components.SingletonComponent
+ import PKG.jetpackcomposedemos.core.NetworkModule
+ import PKG.jetpackcomposedemos.features.artists.data.ArtistDataSource
+ import PKG.jetpackcomposedemos.features.orders.data.OrderDataSource
+ import PKG.jetpackcomposedemos.testutil.fakes.FakeArtistDataSource
+ import PKG.jetpackcomposedemos.testutil.fakes.FakeOrderDataSource
+ import dagger.Binds
+-import dagger.Module
+-import dagger.hilt.components.SingletonComponent
+-import dagger.hilt.testing.TestInstallIn
+ 
+ @Module
+ @TestInstallIn(
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDaoTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDaoTest.kt
+index 7c6c669..4cc70e5 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDaoTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDaoTest.kt
+@@ -4,15 +4,14 @@ import android.content.Context
+ import androidx.room.Room
+ import androidx.test.core.app.ApplicationProvider
+ import PKG.jetpackcomposedemos.core.room.AppDatabase
+-import kotlinx.coroutines.test.runTest
+-import app.cash.turbine.test
+-import PKG.jetpackcomposedemos.testutil.builders.anArtistEntity
+ import junit.framework.TestCase.assertEquals
+-import junit.framework.TestCase.assertNull
+-import kotlinx.coroutines.flow.first
++import kotlinx.coroutines.test.runTest
+ import org.junit.After
+ import org.junit.Before
+ import org.junit.Test
++import app.cash.turbine.test
++import PKG.jetpackcomposedemos.testutil.builders.anArtistEntity
++import kotlinx.coroutines.flow.first
+ 
+ class ArtistDaoTest {
+ 
+@@ -40,11 +39,10 @@ class ArtistDaoTest {
+     }
+ 
+     @Test
+-    fun givenObservedList_whenArtistsAreInserted_thenANewListIsEmitted() = runTest {
++    fun givenObservedList_whenArtistsAreInserted_thenNewListEmited() = runTest {
+         dao.observeArtists().test {
+             assertEquals(emptyList<ArtistEntity>(), awaitItem())
+-
+-            dao.upsertArtists(listOf(anArtistEntity(id = 1), anArtistEntity(id = 2)))
++            dao.upsertArtist(listOf(anArtistEntity(id = 1), anArtistEntity(id = 2)))
+ 
+             val ids = awaitItem().map {it.id }.sorted()
+             assertEquals(listOf(1,2), ids)
+@@ -54,9 +53,9 @@ class ArtistDaoTest {
+     @Test
+     fun givenExistingArtist_whenUpsertedWithTheSameId_thenRowIsReplacedNotDuplicated() = runTest {
+         //should insert
+-        dao.upsertArtists(listOf(anArtistEntity(id = 1, name = "Old Name")))
++        dao.upsertArtist(listOf(anArtistEntity(id = 1, name = "Old Name")))
+         // should update, not append
+-        dao.upsertArtists(listOf(anArtistEntity(id = 1, name = "New Name")))
++        dao.upsertArtist(listOf(anArtistEntity(id = 1, name = "New Name")))
+ 
+         val artists = dao.observeArtists().first()
+ 
+@@ -64,9 +63,8 @@ class ArtistDaoTest {
+     }
+ 
+     @Test
+-    fun givenExistingArtists_whenReplaceAll_thenInsertUpdatesAndDeletesInOneStep() = runTest {
+-
+-        dao.upsertArtists(listOf(
++    fun givenExistingArtist_whenReplaceAll_thenInsertUpdatesAndDeleteInOneStep() = runTest {
++        dao.upsertArtist(listOf(
+             anArtistEntity(id = 1, name = "Abe"),
+             anArtistEntity(id = 2, name = "Bob"),
+             anArtistEntity(id = 3, name = "Carol")
+@@ -74,55 +72,44 @@ class ArtistDaoTest {
+ 
+         dao.replaceAll(listOf(
+             anArtistEntity(id = 1, name = "Abe Updated"),
+-            anArtistEntity(id = 4, name = "Dee"),
++            anArtistEntity(id = 4, name = "Dee")
+         ))
+ 
+         val artists = dao.observeArtists().first().sortedBy { it.id }
+         // test whether inserts and deletes happened properly
+         assertEquals(listOf(1,4), artists.map{ it.id })
+ 
+-        // test whether the updates happened properly
++        // tests whether the updates happened properly
+         assertEquals(listOf("Abe Updated", "Dee"), artists.map { it.name})
+-
+     }
+ 
+-
+     @Test
+     fun givenNoSuchArtist_whenObservedById_thenEmitsNull() = runTest {
+         dao.observeArtist(42).test {
+-            assertNull(awaitItem())
++            assertEquals(null, awaitItem())
+         }
+     }
+-
+     @Test
+     fun givenExistingArtist_whenObservedById_thenEmitsThatArtist() = runTest {
+ 
+         val artist = anArtistEntity(id = 1, name = "Abe")
+-        dao.upsertArtists(listOf(artist))
+-
++        dao.upsertArtist(listOf(artist))
++//        dao.observeArtist(1).test {
++//            assertEquals(anArtistEntity(id = 1, name = "Abe"), awaitItem())
++//        }
+         val result = dao.observeArtist(1).first()
+ 
+         assertEquals(artist, result)
+     }
+ 
+     @Test
+-    fun givenObservedArtist_whenADifferentArtistIsInserted_thenTheSameValueIsEmittedAgain() = runTest {
+-
+-        dao.upsertArtists(listOf(anArtistEntity(id = 1, name = "Abe")))
++    fun givenObservedArtist_whenADifferentArtistIsInserteD_thenTheSameValueIsEmittedAgain() = runTest {
++        dao.upsertArtist(listOf(anArtistEntity(id = 1, name = "Abe")))
+ 
+         dao.observeArtist(1).test {
+             val first = awaitItem()
+-
+-            dao.upsertArtists(listOf(anArtistEntity(id = 2, name = "Bob")))
+-
++            dao.upsertArtist(listOf(anArtistEntity(id = 2, name = "Bob")))
+             assertEquals(first, awaitItem())
+         }
+-
+     }
+-
+-
+-
+ }
+\ No newline at end of file
+-
+-
+-
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCardTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCardTest.kt
+index 8685799..6698142 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCardTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCardTest.kt
+@@ -12,7 +12,6 @@ import PKG.jetpackcomposedemos.ui.theme.KazooTheme
+ import junit.framework.TestCase.assertEquals
+ import org.junit.Rule
+ import org.junit.Test
+-import org.junit.experimental.theories.suppliers.TestedOn
+ 
+ class ArtistCardTest {
+ 
+@@ -42,12 +41,12 @@ class ArtistCardTest {
+ //    @Test
+ //    fun explore_printSemanticsTrees(){
+ //        setCard()
+-//        composeRule.onRoot().printToLog("ARTIST_CARD_MERGED")
+-//        composeRule.onRoot(useUnmergedTree = true).printToLog("ARTIST_CARD_UNMERGED")
++//        composeRule.onRoot().printToLog("Artist_Card_Merges")
++//        composeRule.onRoot(useUnmergedTree = true).printToLog("Artist_Card_Unmerged")
+ //    }
+ 
+     @Test
+-    fun givenArtist_whenShown_thenDisplaysNameGenreLocation() {
++    fun givenArtist_whenShown_thenDisplaysNameGenreLocationAndDescription(){
+         setCard()
+ 
+         composeRule.onNodeWithText(artist.name, useUnmergedTree = true).assertIsDisplayed()
+@@ -56,7 +55,7 @@ class ArtistCardTest {
+     }
+ 
+     @Test
+-    fun givenCard_whenTapped_thenOnClickIsCalledOnce() {
++    fun givenCard_whenTapped_thenOnClickedIsCalledOnce(){
+ 
+         setCard()
+ 
+@@ -69,32 +68,26 @@ class ArtistCardTest {
+     fun givenNotFavorite_whenStarTapped_thenBecomesFavorite() {
+         setCard()
+ 
+-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+-            .performClick()
++        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).performClick()
+ 
+-        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true)
+-            .assertIsDisplayed()
+-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+-            .assertDoesNotExist()
++        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true).assertIsDisplayed()
++
++        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).assertDoesNotExist()
+     }
+ 
+     @Test
+-    fun givenFavorite_whenStarTappedAgain_thenReturnsToNotAFavorite() {
++    fun givenFavorite_whenStartTappedAgain_thenReturnsToNotFavorite(){
+         setCard()
+ 
+-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+-            .performClick()
++        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).performClick()
+ 
+-        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true)
+-            .performClick()
++        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true).performClick()
+ 
+-        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true)
+-            .assertIsDisplayed()
+-        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true)
+-            .assertDoesNotExist()
+-    }
++        composeRule.onNodeWithContentDescription("Not favorite", useUnmergedTree = true).assertIsDisplayed()
+ 
+-}
++        composeRule.onNodeWithContentDescription("Favorite", useUnmergedTree = true).assertDoesNotExist()
+ 
+ 
+ 
++    }
++}
+\ No newline at end of file
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryTest.kt
+index d0431e3..25d38bd 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryTest.kt
+@@ -12,12 +12,12 @@ import androidx.compose.ui.test.onNodeWithText
+ import androidx.compose.ui.test.performClick
+ import androidx.compose.ui.test.performScrollToIndex
+ import androidx.compose.ui.test.performTextInput
++import org.junit.Rule
+ import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ import PKG.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
+ import PKG.jetpackcomposedemos.testutil.builders.anArtist
+ import PKG.jetpackcomposedemos.ui.theme.KazooTheme
+ import junit.framework.TestCase.assertEquals
+-import org.junit.Rule
+ import org.junit.Test
+ 
+ class ArtistDirectoryTest {
+@@ -25,22 +25,23 @@ class ArtistDirectoryTest {
+     @get:Rule
+     val composeRule = createComposeRule()
+ 
+-    private fun artists(count: Int): List<Artist> = List(count, { i ->
++    private fun artists(count: Int): List<Artist> = List(count) { i ->
+     anArtist(
+         id = i + 1,
+         name = "Artist ${i + 1}",
+-            genre = if (i % 2 == 0) "Rock" else "Pop",
+-            location = if (i % 2 == 0) "New York, NY" else "Miami, FL"
++        genre = if ( i % 2 == 0) "Rock" else ("Pop"),
++        location = if ( i % 2 == 0) "New York, NY" else ("Miami"),
+     )
+-    })
++    }
+ 
+-    // create our composable with a static state
+     private fun setDirectory(
+         state: ArtistDirectoryState,
+         useTwoPaneLayout: Boolean = false,
+         onBack: () -> Unit = {},
+         onArtistSelected: (Int) -> Unit = {},
+-        onShowFilterChange: (Boolean) -> Unit = {}
++        onGenreChange: (String) -> Unit = {},
++        onLocationChange: (String) -> Unit = {},
++        onShowFilterChange: (Boolean) -> Unit = {},
+     ) {
+         composeRule.setContent {
+             KazooTheme {
+@@ -49,6 +50,8 @@ class ArtistDirectoryTest {
+                     useTwoPaneLayout = useTwoPaneLayout,
+                     onBack = onBack,
+                     onArtistSelected = onArtistSelected,
++                    onGenreChange = onGenreChange,
++                    onLocationChange = onLocationChange,
+                     onShowFilterChange = onShowFilterChange
+                 )
+             }
+@@ -56,7 +59,7 @@ class ArtistDirectoryTest {
+     }
+ 
+ // create our composable with a dynamic state
+-    private fun setDirectoryWithHost(
++private fun setDirectoryWithHosts(
+     initial: ArtistDirectoryState
+ ){
+     composeRule.setContent {
+@@ -85,7 +89,7 @@ class ArtistDirectoryTest {
+     @Test
+     fun givenState_whenShown_thenDisplaysTheArtistNames() {
+         val artists = artists(3)
+-        setDirectory(ArtistDirectoryState(artists = artists))
++        setDirectory(ArtistDirectoryState(artists = artists(3)))
+ 
+         artists.map{it.name }.forEach { name ->
+             composeRule.onNodeWithText(name, useUnmergedTree = true).assertIsDisplayed()
+@@ -93,7 +97,7 @@ class ArtistDirectoryTest {
+     }
+ 
+     @Test
+-    fun givenGenreFilterInState_whenShown_thenOnlyMatchingArtistsAreListed() {
++    fun givenFilterInState_whenShown_thenOnlyMatchingArtistsAreListed() {
+         val artists = artists(4)
+         setDirectory(ArtistDirectoryState(
+             artists = artists,
+@@ -106,7 +109,7 @@ class ArtistDirectoryTest {
+     }
+ 
+     @Test
+-    fun givenLocationFilterInState_whenShown_thenOnlyMatchingArtistsAreListed() {
++    fun givenLocationFilterInState_thenOnlyMatchingArtistsAreListed() {
+         val artists = artists(4)
+         setDirectory(ArtistDirectoryState(
+             artists = artists,
+@@ -116,10 +118,10 @@ class ArtistDirectoryTest {
+         composeRule.onNodeWithText("Displaying 2 artists").assertIsDisplayed()
+         composeRule.onNodeWithText(artists[0].name, useUnmergedTree = true).assertDoesNotExist()
+         composeRule.onNodeWithText(artists[1].name, useUnmergedTree = true).assertIsDisplayed()
+-    }
+ 
++    }
+ 
+-    // ----------- interactions ------------------------
++    // - - - - - - - - - - - - - - -interaction- - - - - - - - - - - - - - -
+     @Test
+     fun givenDirectory_whenArtistTapped_thenOnArtistSelectedReceivesItsId() {
+         var selectedId: Int? = null
+@@ -135,7 +137,7 @@ class ArtistDirectoryTest {
+     }
+ 
+     @Test
+-    fun givenDirectory_whenShowFilterTapped_thenRequestsToShowFilter() {
++    fun givenDirectory_whenShowFilterTapped_thenRequestToShowFilter() {
+         var requested: Boolean? = null
+ 
+         setDirectory(
+@@ -143,78 +145,54 @@ class ArtistDirectoryTest {
+             onShowFilterChange = { requested = it }
+         )
+ 
+-        composeRule.onNodeWithContentDescription("Show filter").performClick()
++        composeRule.onNodeWithContentDescription("Filter").performClick()
+ 
+         assertEquals(true, requested)
+     }
+ 
+     @Test
+     fun givenLongList_whenShown_thenOffscreenArtistsAreNotComposedUntilScrolledTo() {
+-
+-        setDirectory(ArtistDirectoryState(artists = artists(100)))
++        setDirectoryWithHosts(ArtistDirectoryState(artists = artists(100)))
+ 
+         composeRule.onNodeWithText("Artist 87",useUnmergedTree = true).assertDoesNotExist()
+-        // LazyColumn only composes what is visible, so this node should exist yet
++        // lazy column only composes what is visible, so this node should not exist yet
+ 
+-        // LazyColumn is scrollable, so scroll index 86 into view
++        // lazyColumn is scrollable, so scroll index 86 to view
+         composeRule.onNode(hasScrollAction()).performScrollToIndex(86)
+-
+         composeRule.onNodeWithText("Artist 87",useUnmergedTree = true).assertIsDisplayed()
+     }
+ 
+-
+-
+-    // ---------- tests that require a dynamic state for the composable -------------
++    // --------- tests that require a dynamic state for the composable ---------
+     @Test
+-    fun givenDirectory_whenShowFilterTapped_thenFilterSheetAppears() {
+-        setDirectoryWithHost(ArtistDirectoryState(artists = artists(4)))
++    fun givenDirectory_WhenShownFilterTapped_ThenFilterSheetAppears(){
++        setDirectoryWithHosts(ArtistDirectoryState(artists = artists(4)))
+ 
+         composeRule.onNodeWithText("Filter Artists").assertDoesNotExist()
+ 
+-        composeRule.onNodeWithContentDescription("Show filter").performClick()
+-
+-        composeRule.onNodeWithText("Filter Artists").assertIsDisplayed()
+-//        composeRule.onNode(hasText("Filter Artists")).assertIsDisplayed()
++        composeRule.onNodeWithContentDescription("Filter").performClick()
+ 
++        composeRule.onNodeWithText("Filter Artist").assertIsDisplayed()
+     }
+ 
+     @Test
+-    fun givenFilterSheetOpen_whenCloseTapped_thenFilterSheetCloses() {
+-        setDirectoryWithHost(ArtistDirectoryState(
+-            artists = artists(4),
++    fun givenDirectory_whenFilterCloseTapped_thenFilterSheetDisappears(){
++        setDirectoryWithHosts(ArtistDirectoryState(artists = artists(4),
+             showFilter = true
+         ))
+-//        composeRule.onNodeWithContentDescription("Show filter").performClick()
+-        composeRule.onNodeWithText("Filter Artists").assertIsDisplayed()
+ 
++//        composeRule.onNodeWithContentDescription("Filter").performClick()
++        composeRule.onNodeWithText("Filter Artist").assertIsDisplayed()
+         composeRule.onNodeWithText("Close").performClick()
+-
+-        composeRule.onNodeWithText("Filter Artists").assertDoesNotExist()
+-
++        composeRule.onNodeWithText("Filter Artist").assertDoesNotExist()
+     }
+ 
+     @Test
+     fun givenFilterSheetOpen_whenGenreTyped_thenListIsFiltered(){
+-        setDirectoryWithHost(ArtistDirectoryState(
+-            artists = artists(4),
++        setDirectoryWithHosts(ArtistDirectoryState(artists = artists(4),
+             showFilter = true
+         ))
+-
+         composeRule.onNodeWithText("Displaying 4 artists").assertIsDisplayed()
+-
+         composeRule.onNodeWithText("Genre:").performTextInput("Rock")
+-
+         composeRule.onNodeWithText("Displaying 2 artists").assertIsDisplayed()
+     }
+-
+-
+-
+-
+-
+ }
+-
+-
+-
+-
+-
+-
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContentTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContentTest.kt
+index eccd4a9..284e1cf 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContentTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContentTest.kt
+@@ -5,7 +5,6 @@ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.semantics.ProgressBarRangeInfo
+ import androidx.compose.ui.test.assertIsDisplayed
+-import androidx.compose.ui.test.assertIsNotEnabled
+ import androidx.compose.ui.test.hasProgressBarRangeInfo
+ import androidx.compose.ui.test.hasText
+ import androidx.compose.ui.test.junit4.v2.createComposeRule
+@@ -19,6 +18,7 @@ import junit.framework.TestCase.assertEquals
+ import org.junit.Before
+ import org.junit.Rule
+ import org.junit.Test
++import kotlin.collections.emptyList
+ 
+ class LoginContentTest {
+ 
+@@ -33,12 +34,13 @@ class LoginContentTest {
+     // common UI items our tests will need to find:
+     private val loadingIndicator = hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)
+     private val anyWelcome = hasText("Welcome", substring = true)
+-    private val anyError = hasText("Error:", substring = true)
++    private val anyError = hasText("Error", substring = true)
++
+ 
+     @Before
+-    fun setUp() {
++    fun set(){
+         composeRule.setContent {
+-            KazooTheme {
++            KazooTheme() {
+                 LoginContent(
+                     uiState = uiState,
+                     onLogin = {userId, passcode -> loginAttempts.add(Pair(userId, passcode))},
+@@ -53,8 +55,7 @@ class LoginContentTest {
+         composeRule.runOnIdle{uiState = state}
+     }
+ 
+-
+-    // ---------- test the Idle state ------------------
++    // -------------------- test the Idle state --------------------
+     @Test
+     fun givenIdle_whenShown_thenShowsBothFieldsAndTheLoginButton() {
+         composeRule.onNodeWithText("User ID").assertIsDisplayed()
+@@ -63,14 +65,14 @@ class LoginContentTest {
+     }
+ 
+     @Test
+-    fun givenIdle_whenShown_thenShowsNoSpinnerWelcomeOrError() {
++    fun givenIle_whenShown_thenShowsNoSpinnerWelcomeOrError() {
+         composeRule.onNode(loadingIndicator).assertDoesNotExist()
+         composeRule.onNode(anyWelcome).assertDoesNotExist()
+         composeRule.onNode(anyError).assertDoesNotExist()
+     }
+ 
+ 
+-    // -------------- Loading state ----------------------
++    // -------------------- loading state --------------------
+     @Test
+     fun givenLoading_whenShown_thenShowsASpinnerAndNothingElse() {
+         showState(LoginUiState.Loading)
+@@ -82,7 +83,6 @@ class LoginContentTest {
+     }
+ 
+ 
+-    // ------------- Success state -----------------------
+     @Test
+     fun givenSuccess_whenShown_thenGreetsTheUserByUsername() {
+         showState(LoginUiState.Success(aUser(username = "Steve")))
+@@ -124,21 +122,4 @@ class LoginContentTest {
+         assertEquals(listOf(Pair("hello", "world")), loginAttempts)
+ 
+     }
+-
+-    @Test
+-    fun givenLoading_whenShown_thenLoginButtonIsDisabled() {
+-        showState(LoginUiState.Loading)
+-
+-        composeRule.onNodeWithText("Login").assertIsNotEnabled()
+-    }
+-
+-
+ }
+\ No newline at end of file
+-
+-
+-
+-
+-
+-
+-
+-
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginScreenSynchronizationTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginScreenSynchronizationTest.kt
+index 69cd886..8cb3f2e 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginScreenSynchronizationTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginScreenSynchronizationTest.kt
+@@ -8,16 +8,15 @@ import androidx.compose.ui.test.hasText
+ import androidx.compose.ui.test.junit4.v2.createComposeRule
+ import androidx.compose.ui.test.onNodeWithText
+ import androidx.compose.ui.test.performClick
+-import androidx.compose.ui.test.performTextInput
+ import PKG.jetpackcomposedemos.features.auth.domain.AuthRepository
+ import PKG.jetpackcomposedemos.features.auth.domain.LoginUseCase
+ import PKG.jetpackcomposedemos.features.auth.domain.User
+-import PKG.jetpackcomposedemos.testutil.builders.aUser
+ import PKG.jetpackcomposedemos.ui.theme.KazooTheme
+ import kotlinx.coroutines.CompletableDeferred
+ import kotlinx.coroutines.delay
+-import org.junit.Assert.assertEquals
+ import org.junit.Rule
++import androidx.compose.ui.test.performTextInput
++import PKG.jetpackcomposedemos.testutil.builders.aUser
+ import org.junit.Test
+ 
+ @OptIn(ExperimentalTestApi::class)
+@@ -26,7 +24,7 @@ class LoginScreenSynchronizationTest {
+     @get: Rule
+     val composeRule = createComposeRule()
+ 
+-    private class SlowAuthRepository(
++    private class SlowAuthReposiitory(
+         private val delayMillis: Long,
+         private val result: Result<User>
+     ): AuthRepository {
+@@ -69,46 +62,20 @@ class LoginScreenSynchronizationTest {
+         composeRule.onNodeWithText("Login").performClick()
+     }
+ 
+-    // ---------- 1. the mistake: asserting without waiting ----------
+-
+-    // Remove @Ignore live. It fails: Compose waits for recomposition and animations, but it
+-    // cannot know that a coroutine in the view model is still sleeping for 500 ms.
+-//    @Ignore("Demonstration: fails because the login has not finished yet")
+ //    @Test
+-//    fun givenSlowLogin_whenAssertedImmediately_thenFails() {
+-//        setLoginScreen(SlowAuthRepository(500, Result.success(aUser())))
+-//
+-//        enterCredentialsAndTapLogin()
+-//
+-//        composeRule.onNodeWithText("Welcome, hello").assertIsDisplayed()   // not there yet
+-//    }
++//    fun givenSlowLogin_whenAssertedImmediately_thenFails() {}
+ 
+-    // ---------- 2. the fix: wait for the condition ----------
+ 
+     @Test
+     fun givenSlowLogin_whenLoginTapped_thenWelcomeAppearsOnceLoginCompletes() {
+-        setLoginScreen(SlowAuthRepository(500, Result.success(aUser(username = "hello"))))
++        setLoginScreen(SlowAuthReposiitory(50, Result.success(aUser(username = "hello"))))
+ 
+         enterCredentialsAndTapLogin()
+ 
+-        // The default timeout is only 1 second. State the timeout you actually need.
++        // Compose cannot know how long our repository will take
+         composeRule.waitUntilExactlyOneExists(hasText("Welcome, hello"), timeoutMillis = 5_000)
+-        composeRule.onNodeWithText("Welcome, hello").assertIsDisplayed()
+     }
+ 
+-    @Test
+-    fun givenSlowLogin_whenLoginSucceeds_thenOnLoginSuccessReceivesTheUser() {
+-        val user = aUser(username = "hello")
+-        setLoginScreen(SlowAuthRepository(300, Result.success(user)))
+-
+-        enterCredentialsAndTapLogin()
+-
+-        composeRule.waitUntil(timeoutMillis = 5_000) { loggedInUsers.isNotEmpty() }
+-        assertEquals(listOf(user), loggedInUsers)
+-    }
+-
+-    // ---------- 3. a deterministic version: a gate instead of a timer ----------
+-
+     @Test
+     fun givenGatedLogin_whenLoginTapped_thenLoadingShowsUntilTheGateOpens() {
+         val repository = GatedAuthRepository()
+@@ -116,50 +83,15 @@ class LoginScreenSynchronizationTest {
+ 
+         enterCredentialsAndTapLogin()
+ 
+-        // The repository is parked on the gate, so Loading is guaranteed to be on screen.
++        // the repository is parked at the gate, so Loading should be on the screen
++        // and will stay there until we release the repository from the gate
+         composeRule.onNode(loadingIndicator).assertIsDisplayed()
+-        composeRule.onNodeWithText("Welcome, hello").assertDoesNotExist()
++        composeRule.onNodeWithText("welcome, hello").assertDoesNotExist()
+ 
++            // once we are done with all assertions we want to run at this point
+         repository.gate.complete(Result.success(aUser(username = "hello")))
+ 
+         composeRule.waitUntilExactlyOneExists(hasText("Welcome, hello"),timeoutMillis = 5_000)
+         composeRule.onNode(loadingIndicator).assertDoesNotExist()
+     }
+-
+-    @Test
+-    fun givenGatedLogin_whenRepositoryFails_thenErrorMessageAppearsAndLoadingStops() {
+-        val repository = GatedAuthRepository()
+-        setLoginScreen(repository)
+-
+-        enterCredentialsAndTapLogin()
+-        composeRule.onNode(loadingIndicator).assertIsDisplayed()
+-
+-        repository.gate.complete(Result.failure(IllegalArgumentException("Invalid credentials")))
+-
+-        composeRule.waitUntilExactlyOneExists(
+-            hasText("Error: Invalid credentials"),
+-            timeoutMillis = 5_000
+-        )
+-        composeRule.onNode(loadingIndicator).assertDoesNotExist()
+-        assertEquals(emptyList<User>(), loggedInUsers)
+-    }
+-
+-    // ---------- 4. waiting for something to disappear ----------
+-
+-    @Test
+-    fun givenGatedLogin_whenGateOpens_thenLoadingIndicatorGoesAway() {
+-        val repository = GatedAuthRepository()
+-        setLoginScreen(repository)
+-        enterCredentialsAndTapLogin()
+-        composeRule.onNode(loadingIndicator).assertIsDisplayed()
+-
+-        repository.gate.complete(Result.success(aUser()))
+-
+-        composeRule.waitUntilDoesNotExist(loadingIndicator, timeoutMillis = 5_000)
+ }
+\ No newline at end of file
+-
+-
+-}
+-
+-
+-
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoScreenIntegrationTest.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoScreeningIntegrationTest.kt
+similarity index 68%
+rename from prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoScreenIntegrationTest.kt
+rename to mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoScreeningIntegrationTest.kt
+index 8df6e89..b550e6c 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoScreenIntegrationTest.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoScreeningIntegrationTest.kt
+@@ -11,25 +11,24 @@ import androidx.compose.ui.test.performClick
+ import androidx.compose.ui.test.performTextInput
+ import androidx.compose.ui.test.performTouchInput
+ import androidx.test.espresso.action.ViewActions.doubleClick
+-import PKG.jetpackcomposedemos.HiltTestActivity
+ import PKG.jetpackcomposedemos.core.room.AppDatabase
+ import PKG.jetpackcomposedemos.features.todo.data.ToDoDao
+ import PKG.jetpackcomposedemos.features.todo.data.ToDoEntity
+-import PKG.jetpackcomposedemos.testutil.builders.aToDoEntity
+-import PKG.jetpackcomposedemos.ui.theme.KazooTheme
+ import dagger.hilt.android.testing.HiltAndroidRule
+ import dagger.hilt.android.testing.HiltAndroidTest
++import org.junit.Rule
++import PKG.jetpackcomposedemos.testutil.HiltTestActivity
++import PKG.jetpackcomposedemos.testutil.builders.aToDoEntity
++import PKG.jetpackcomposedemos.ui.theme.KazooTheme
+ import junit.framework.TestCase.assertEquals
+ import kotlinx.coroutines.runBlocking
+ import org.junit.After
+ import org.junit.Before
+-import org.junit.Rule
+ import org.junit.Test
+ import javax.inject.Inject
+ 
+-
+ @HiltAndroidTest
+-class ToDoScreenIntegrationTest {
++class ToDoScreeningIntegrationTest {
+ 
+     // order matters: Hilt must build its component BEFORE the activity starts
+     @get:Rule(order = 0)
+@@ -80,16 +79,15 @@ class ToDoScreenIntegrationTest {
+     }
+ 
+     private fun addToDoThroughTheUi(title: String) {
+-        composeRule.onNodeWithContentDescription("Add a new to-do item").performClick()
++        composeRule.onNodeWithContentDescription("Add").performClick()
+         composeRule.onNodeWithText("New to-do").performTextInput(title)
+         composeRule.onNodeWithText("Add").performClick()
+     }
+ 
+ 
+-    // ---------------------- tests ------------------------------
++    // --------------------------- tests ---------------------------
+     @Test
+     fun givenSavedToDos_whenScreenOpens_thenTheyAreListed(){
+-
+         seed("Buy milk", "Walk the dog", "Wash the cat")
+ 
+         showScreen()
+@@ -101,17 +99,6 @@ class ToDoScreenIntegrationTest {
+ 
+     }
+ 
+-    @Test
+-    fun givenEmptyDatabase_whenAToDoIsAdded_thenItIsShownAndSaved() {
+-        showScreen()
+-
+-        addToDoThroughTheUi("Buy cake")
+-
+-        waitForText("Buy cake")
+-        assertEquals(listOf("Buy cake"), savedToDos().map { it.title })
+-        assertEquals(false, savedToDos().single().completed)
+-    }
+-
+     @Test
+     fun givenSavedToDo_whenDoubleTapped_thenItIsMarkedCompletedInTheDatabase() {
+         seed("Buy milk")
+@@ -122,29 +109,11 @@ class ToDoScreenIntegrationTest {
+             .performTouchInput { doubleClick(delayMillis = 100 ) }
+ 
+         composeRule.waitUntil(timeoutMillis = 5_000) {
+-            composeRule.onAllNodesWithContentDescription("Completed", useUnmergedTree = true)
++            composeRule.onAllNodesWithText("Buy milk", useUnmergedTree = true)
+                 .fetchSemanticsNodes().isNotEmpty()
+         }
+         assertEquals(true, savedToDos().single().completed)
+     }
+ 
+-    // The empty title is rejected by ToDosViewModel, so it never reaches the database.
+-    // We prove it by adding a second, real item and checking only that one was saved,
+-    // which avoids waiting to "see nothing happen".
+-    @Test
+-    fun givenAnEmptyTitle_whenAddTapped_thenNothingIsSavedForIt() {
+-        showScreen()
+-
+-        composeRule.onNodeWithContentDescription("Add a new to-do item").performClick()
+-        composeRule.onNodeWithText("Add").performClick()      // sheet's Add button, no text typed
+-        addToDoThroughTheUi("Real item")
+-
+-        waitForText("Real item")
+-        assertEquals(listOf("Real item"), savedToDos().map { it.title })
+-    }
+-
+ 
+ }
+\ No newline at end of file
+-
+-
+-
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/HiltTestRunner.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/HiltTestRunner.kt
+similarity index 74%
+rename from prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/HiltTestRunner.kt
+rename to mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/HiltTestRunner.kt
+index 17986bf..b9cf1c2 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/HiltTestRunner.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/HiltTestRunner.kt
+@@ -1,11 +1,11 @@
+-﻿package PKG.jetpackcomposedemos
++﻿package PKG.jetpackcomposedemos.testutil
+ 
+ import android.app.Application
+ import android.content.Context
+ import androidx.test.runner.AndroidJUnitRunner
+ import dagger.hilt.android.testing.HiltTestApplication
+ 
+-class HiltTestRunner: AndroidJUnitRunner() {
++class HiltTestRunner(): AndroidJUnitRunner() {
+ 
+     override fun newApplication(
+         cl: ClassLoader?,
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt
+index 792c1e7..441503c 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt
+@@ -6,7 +6,7 @@ fun anArtist(
+     id: Int = 1,
+     name: String = "Test Artist",
+     genre: String = "Rock",
+-    location: String = "New York, NY",
++    location: String = "New York. NY",
+     imageUrl: String = "",
+     description: String = "",
+     isAvailable: Boolean = true
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/entities.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/entities.kt
+index b159e3f..08dbfd5 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/entities.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/builders/entities.kt
+@@ -26,21 +24,18 @@ fun anOrderEntity(
+     firstName: String = "Ada",
+     lastName: String = "Lovelace",
+     orderDate: LocalDateTime = LocalDateTime.of(2024, 1, 1,0 ,0),
+-    shipDate: LocalDateTime = LocalDateTime.of(2024, 1, 3, 0, 0)
++    shipDate: LocalDateTime = LocalDateTime.of(2024, 1, 3,0 ,0),
+ ) = OrderEntity(id, customerId,firstName, lastName, orderDate, shipDate)
+ 
+-
+-
+-fun aLineItemEntity(
++fun aLineitemEntity(
+     id: Int =1,
+     orderId:Int = 1,
+     productName: String = "Widget",
+     orderQty: Int = 1,
+     unitPrice: Double = 10.0,
+-    lineTotal: Double = orderQty * unitPrice
++    lineTotal: Double = unitPrice * orderQty
+ ) = LineItemEntity(id, orderId, productName, orderQty, unitPrice, lineTotal)
+ 
+-
+ fun anOrderWithItems(
+     order: OrderEntity = anOrderEntity(),
+     vararg items: LineItemEntity
+diff --git a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/fakes/FakeDataSources.kt b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/fakes/fakeDataSources.kt
+similarity index 73%
+rename from prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/fakes/FakeDataSources.kt
+rename to mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/fakes/fakeDataSources.kt
+index 5493b33..f7b439d 100644
+--- a/prof/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/fakes/FakeDataSources.kt
++++ b/mine/app/src/androidTest/java/com/PKG/jetpackcomposedemos/testutil/fakes/fakeDataSources.kt
+@@ -8,17 +8,20 @@ import PKG.jetpackcomposedemos.testutil.builders.anArtistDto
+ import javax.inject.Inject
+ import javax.inject.Singleton
+ 
+-// @Singleton + @Inject constructor (in testing) means that Hilt creates
+-// ONE instace per test.
+-// that means that the test itself can ask for this to be injected,
++
++// @singleton + @Inject constructor (in testing) means that Hilt creates
++// ONE instance per test
++// That means that the test itself can ask for this to be injected,
+ // and the test will get the same instance that any other item in that test
+ // uses
+ @Singleton
+-class FakeArtistDataSource @Inject constructor() : ArtistDataSource {
++class FakeArtistDataSource @Inject constructor(
++
++): ArtistDataSource {
+ 
+-    var artists: List<ArtistDto> = listOf(
++    val artists: List<ArtistDto> = listOf(
+         anArtistDto(id = 1, name = "Abe"),
+-        anArtistDto(id = 2, name = "Bea"),
++        anArtistDto(id = 2, name = "Bob"),
+     )
+ 
+     var failure: Throwable? = null
+diff --git a/prof/app/src/debug/AndroidManifest.xml b/mine/app/src/debug/AndroidManifest.xml
+index 030c6bb..67456b9 100644
+--- a/prof/app/src/debug/AndroidManifest.xml
++++ b/mine/app/src/debug/AndroidManifest.xml
+@@ -2,7 +2,7 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+     <application>
+         <activity
+-            android:name=".HiltTestActivity"
++            android:name="PKG.jetpackcomposedemos.testutil.HiltTestActivity"
+             android:exported="false"
+         />
+     </application>
+diff --git a/mine/app/src/main/java/com/PKG/jetpackcomposedemos/AccountListScreen.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/AccountListScreen.kt
+new file mode 100644
+index 0000000..43319f9
+--- /dev/null
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/AccountListScreen.kt
+@@ -0,0 +1,227 @@
++﻿package PKG.jetpackcomposedemos
++
++//
++// AccountListScreen_Starter.kt
++// Module 12 â€” Android UI Development
++// Lab Exercise: PNC Mobile â€” Accounts List Screen (Jetpack Compose)
++//
++// SCENARIO
++// Build the accounts list screen for PNC Mobile Android â€” the final screen
++// for Module 12. This exercise pulls together state (Block 1), navigation
++// (Block 3), LazyColumn (Block 4), accessibility (Block 6), and animation
++// (Block 7).
++//
++// REQUIREMENTS
++// 1. Build AccountListScreen using LazyColumn and Material 3 components.
++// 2. Each row shows account name, masked account number, and balance.
++// 3. Tapping a row calls onAccountClick(accountId) â€” wiring this to actual
++//    Navigation Compose is assumed to happen in a NavHost elsewhere (not
++//    part of this file).
++// 4. Every row must be fully readable by TalkBack as ONE combined element,
++//    not three separate announcements.
++// 5. Add an AnimatedVisibility confirmation banner that appears briefly
++//    after a simulated refresh (a button that toggles a "Refreshed!"
++//    message is sufficient to demonstrate this).
++//
++// The Account model below is complete. Implement the two TODOs.
++//
++
++import androidx.compose.animation.AnimatedVisibility
++import androidx.compose.animation.fadeIn
++import androidx.compose.animation.fadeOut
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.*
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.material3.*
++import androidx.compose.runtime.*
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.unit.dp
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.outlined.AccountBalance
++import androidx.compose.material.icons.outlined.CreditCard
++import androidx.compose.material.icons.outlined.Savings
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.vector.ImageVector
++
++// MARK: - Model (complete â€” no changes needed)
++
++
++
++
++data class Account(
++    val id: String,
++    val name: String,
++    val maskedNumber: String,
++    val balance: Double
++)
++
++val sampleAccounts = listOf(
++    Account("a1", "Everyday Checking", "\u2022\u2022\u2022\u2022 4471", 4281.16),
++    Account("a2", "High Yield Savings", "\u2022\u2022\u2022\u2022 9902", 18340.50),
++    Account("a3", "Rewards Credit Card", "\u2022\u2022\u2022\u2022 2216", -612.44)
++)
++
++
++// Card for each type of account
++enum class AccountType {
++    CHECKING,
++    SAVINGS,
++    CREDIT
++}
++
++data class AccountStyle(
++    val label: String,
++    val icon: ImageVector,
++    val containerColor: Color,
++    val contentColor: Color
++)
++
++  val Account.type: AccountType
++    get() = when {
++        name.contains("Credit", ignoreCase = true) -> AccountType.CREDIT
++        name.contains("Savings", ignoreCase = true) -> AccountType.SAVINGS
++        else -> AccountType.CHECKING
++    }
++
++
++@Composable
++fun AccountType.style(): AccountStyle = when (this) {
++    AccountType.CHECKING -> AccountStyle(
++        label = "Checking",
++        icon = Icons.Outlined.AccountBalance,
++        containerColor = MaterialTheme.colorScheme.primaryContainer,
++        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
++    )
++    AccountType.SAVINGS -> AccountStyle(
++        label = "Savings",
++        icon = Icons.Outlined.Savings,
++        containerColor = MaterialTheme.colorScheme.secondaryContainer,
++        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
++    )
++    AccountType.CREDIT -> AccountStyle(
++        label = "Credit",
++        icon = Icons.Outlined.CreditCard,
++        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
++        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
++    )
++}
++
++
++// MARK: - TODO 1: AccountListScreen
++
++@Composable
++fun AccountListScreen(
++    accounts: List<Account>,
++    onAccountClick: (String) -> Unit
++) {
++    // TODO: Show a "Refresh" button. When tapped, set a boolean state to
++    // true, then use AnimatedVisibility to show a "Refreshed!" confirmation
++    // banner (fadeIn/fadeOut) above the list.
++    //
++    // Below the banner, use a LazyColumn with items(accounts, key = { it.id })
++    // to render an AccountRow for each account.
++    var isRefreshing by remember {
++        mutableStateOf(false)
++    }
++    Column (
++        modifier = Modifier
++            .fillMaxSize()
++            .padding(16.dp)
++    ){
++        Button(
++            onClick = { isRefreshing = true }
++        ) {
++            Text("Refresh")
++        }
++        AnimatedVisibility(
++            visible = isRefreshing,
++            enter = fadeIn(),
++            exit = fadeOut()
++        ) {
++            Text(
++                text = "Refreshed!",
++                style = MaterialTheme.typography.bodyMedium,
++                modifier = Modifier.padding(16.dp)
++            )
++        }
++        LazyColumn(
++            verticalArrangement = Arrangement.spacedBy(12.dp)
++        ){
++            items (
++                items = accounts,
++                key = {account -> account.id}
++            )  { account ->
++                AccountRow(
++                    account = account,
++                    onClick = { onAccountClick(account.id) }
++                )
++            }
++        }
++    }
++}
++
++
++// MARK: - TODO 2: AccountRow
++
++@Composable
++fun AccountRow(
++    account: Account,
++    onClick: () -> Unit
++) {
++    // TODO: Lay out account.name, account.maskedNumber, and account.balance
++    // in a Row/Column combination. Use MaterialTheme.typography styles only
++    // â€” no hard-coded font sizes. Add
++    // Modifier.semantics(mergeDescendants = true) {} and a single,
++    // readable contentDescription for the whole row.
++    val style = account.type.style()
++    Card(
++        onClick = onClick,
++        modifier = Modifier
++            .fillMaxWidth()
++            .semantics(mergeDescendants = true) {
++                contentDescription =
++                    "${style.label} account, " +
++                            "${account.name}, " +
++                            "ending ${account.maskedNumber.takeLast(4)}," +
++                            " balance: $${"%.2f".format(account.balance)}"
++            },
++        colors = CardDefaults.cardColors(
++            containerColor = style.containerColor,
++            contentColor = style.contentColor
++        ),
++        shape = MaterialTheme.shapes.medium
++    ) {
++        Row(
++            modifier = Modifier
++                .padding(16.dp),
++            verticalAlignment = Alignment.CenterVertically,
++            horizontalArrangement = Arrangement.spacedBy(12.dp),
++        ) {
++            Icon(
++                imageVector = style.icon,
++                contentDescription = null
++            )
++            Column(modifier = Modifier.weight(1f)) {
++                Text(
++                    text = account.name,
++                    style = MaterialTheme.typography.titleSmall
++                )
++                Text(
++                    text = "${style.label} ${account.maskedNumber}",
++                    style = MaterialTheme.typography.bodyMedium
++                )
++            }
++            Text(
++                text = "$${"%.2f".format(account.balance)}",
++                style = MaterialTheme.typography.titleMedium
++            )
++        }
++    }
++}
++
++
++
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/MainActivity.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/MainActivity.kt
+index ff551ce..eaeb91e 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/MainActivity.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/MainActivity.kt
+@@ -17,7 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
+ import dagger.hilt.android.HiltAndroidApp
+ 
+ @HiltAndroidApp
+-class EventPlannerApplication: Application()
++class EventPlannerApplication(): Application()
+ 
+ @AndroidEntryPoint
+ class MainActivity : ComponentActivity() {
+@@ -35,8 +35,15 @@ class MainActivity : ComponentActivity() {
+ 
+                     Box(
+                         modifier = modifier
++
+                     ) {
+                         EventPlannerApp()
++//                        AccountListScreen(
++//                            accounts = sampleAccounts,
++//                            onAccountClick = { accountId ->
++//                                Log.d("MainActivity", "Account clicked: $accountId")
++//                            }
++//                        )
+                     }
+                 }
+             }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/AppInjectionModule.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/AppInjectionModule.kt
+index dee1165..87ab1a2 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/AppInjectionModule.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/AppInjectionModule.kt
+@@ -36,13 +37,14 @@ abstract class AppInjectionModule {
+         implementation: OfflineFirstArtistRepository
+     ): ArtistRepository
+ 
++
+     @Binds
+-    abstract fun bindOrdersRepository(
++    abstract fun bindOrderRepository(
+         implementation: LocalOnlyOrderRepository
+         ): OrderRepository
+ 
+     @Binds
+-    abstract fun bindToDoRepository(
++    abstract fun bindTodoRepository(
+         implementation: DefaultToDoRepository
+     ): ToDoRepository
+ 
+@@ -54,12 +55,10 @@ abstract class AppInjectionModule {
+         @ApplicationScope
+         fun provideAppScope(): CoroutineScope {
+             return CoroutineScope(SupervisorJob() + Dispatchers.Default)
+-            // NOTE: using SupervisorJob keeps one failed child from
++            // NOTE using SupervisorJob keeps one failed child from
+             // cancelling the scope for everyone else
+         }
+-
+     }
+-
+ }
+ 
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlannerApp.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlannerApp.kt
+index 2dc1bc6..a818749 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlannerApp.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlannerApp.kt
+@@ -12,7 +12,6 @@ import androidx.navigation.compose.composable
+ import androidx.navigation.compose.rememberNavController
+ import androidx.navigation.toRoute
+ import androidx.window.core.layout.WindowSizeClass
+-import PKG.jetpackcomposedemos.BuildConfig
+ import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ import PKG.jetpackcomposedemos.features.artists.presentation.composables.ArtistDetails
+ import PKG.jetpackcomposedemos.features.artists.presentation.composables.ArtistDirectoryRoute
+@@ -22,9 +21,10 @@ import PKG.jetpackcomposedemos.features.auth.presentation.LoginScreen
+ import PKG.jetpackcomposedemos.features.boardmembers.domain.BoardMember
+ import PKG.jetpackcomposedemos.features.boardmembers.presentation.BoardMemberDetails
+ import PKG.jetpackcomposedemos.features.boardmembers.presentation.BoardMemberList
++import PKG.jetpackcomposedemos.legacy.LegacyArtistList
++import PKG.jetpackcomposedemos.BuildConfig
+ import PKG.jetpackcomposedemos.features.orders.presentation.OrdersScreen
+ import PKG.jetpackcomposedemos.features.todo.presentation.ToDosScreen
+-import PKG.jetpackcomposedemos.legacy.LegacyArtistList
+ 
+ @Composable
+ fun EventPlannerApp(
+@@ -71,8 +73,6 @@ fun EventPlannerApp(
+                 }
+ 
+                 composable<ArtistListRoute> {
+-                    // load the artists from repository or service class
+-
+                     ArtistDirectoryRoute(
+                         onArtistSelected = { artistId ->
+                             navController.navigate(ArtistDetailsRoute(artistId))
+@@ -113,8 +113,10 @@ fun EventPlannerApp(
+                     if(member != null) {
+                         BoardMemberDetails(boardMember = member)
+                     } else {
+-                        Text("Board Member not found")
++                        Text("Member not found")
+                     }
++
++
+                 }
+ 
+                 composable<OrdersRoute> {
+@@ -122,10 +124,11 @@ fun EventPlannerApp(
+                 }
+ 
+                 composable<ToDosRoute> {
+-                    ToDosScreen(useTwoPaneLayout = useTwoPaneLayout)
++                    ToDosScreen(
++                        useTwoPaneLayout = useTwoPaneLayout
++                    )
+                 }
+ 
+-
+             }
+         }
+     }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboard.kt
+index 2bbed1d..35edce3 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/EventPlanningDashboard.kt
+@@ -2,7 +2,6 @@
+ 
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.material3.Button
+@@ -21,11 +20,12 @@ fun EventPlanningDashboard(
+     onViewToDos: () -> Unit
+ ) {
+     Column(
+-        modifier = Modifier.fillMaxSize().padding(16.dp),
++        modifier = Modifier
++            .padding(16.dp),
+             verticalArrangement = Arrangement.spacedBy(16.dp)
+     ) {
+         Text(
+-            text = "Event Planning Operations",
++            text = "Event Planning Dashboard",
+             style = MaterialTheme.typography.headlineMedium,
+             modifier = Modifier.testTag("dashboard-title")
+         )
+@@ -41,7 +39,7 @@ fun EventPlanningDashboard(
+         Button(
+             onClick = onViewBoardMembers,
+             modifier = Modifier.fillMaxWidth()
+-                .testTag("view-board-button")
++                .testTag("view-board-members-button")
+         ) {
+             Text("View Board Members")
+         }
+@@ -49,7 +47,7 @@ fun EventPlanningDashboard(
+         Button(
+             onClick = onViewOrders,
+             modifier = Modifier.fillMaxWidth()
+-                .testTag("view-order-button")
++                .testTag("view-orders-button")
+         ) {
+             Text("View Orders")
+         }
+@@ -57,12 +54,11 @@ fun EventPlanningDashboard(
+         Button(
+             onClick = onViewToDos,
+             modifier = Modifier.fillMaxWidth()
+-                .testTag("view-todo-button")
++                .testTag("view-todos-button")
+         ) {
+-            Text("View To-Dos")
++            Text("To Do List")
+         }
+-
+     }
+-
+ }
+ 
++
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/NetworkModule.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/NetworkModule.kt
+index 54602b9..b60ac63 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/NetworkModule.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/NetworkModule.kt
+@@ -28,7 +29,7 @@ object NetworkModule {
+ 
+     @Provides
+     @Singleton
+-    fun provideOkHttpClient(): OkHttpClient {
++    fun providesOkHttpClient(): OkHttpClient {
+         return OkHttpClient.Builder()
+             .apply {
+                 if(BuildConfig.DEBUG) {
+@@ -42,7 +43,7 @@ object NetworkModule {
+ 
+     @Provides
+     @Singleton
+-    fun provideRetrofit(
++    fun providesRetrofit(
+         client: OkHttpClient
+     ): Retrofit {
+         return Retrofit.Builder()
+@@ -55,7 +56,7 @@ object NetworkModule {
+     @Provides
+     @Singleton
+     @AdventureWorks
+-    fun provideAWRetrofit(
++    fun providesAWRetrofit(
+         client: OkHttpClient
+     ): Retrofit {
+         return Retrofit.Builder()
+@@ -65,10 +66,9 @@ object NetworkModule {
+             .build()
+     }
+ 
+-
+     @Provides
+     @Singleton
+-    fun provideArtistDataSource(
++    fun providesArtistDataSource(
+         retrofit: Retrofit
+     ): ArtistDataSource {
+         return retrofit.create(
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/presentation/TextFilter.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/presentation/TextFilter.kt
+index b860cc9..53ffda2 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/presentation/TextFilter.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/presentation/TextFilter.kt
+@@ -8,9 +8,10 @@ import androidx.compose.runtime.Composable
+ fun TextFilter(
+     label: String,
+     filter: String,
+-    onFilterChange: (String) -> Unit
+-) {
++    onFilterChange: (String) -> Unit,
++
+ 
++){
+     TextField(
+         value = filter,
+         onValueChange = onFilterChange,
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/AppDatabase.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/AppDatabase.kt
+index a793f71..d49bddf 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/AppDatabase.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/AppDatabase.kt
+@@ -3,24 +3,23 @@
+ import android.content.Context
+ import androidx.room.AutoMigration
+ import androidx.room.Database
+-import androidx.room.Room
+ import androidx.room.RoomDatabase
++import PKG.jetpackcomposedemos.features.todo.data.ToDoDao
++import PKG.jetpackcomposedemos.features.todo.data.ToDoEntity
++import androidx.room.Room
+ import androidx.room.TypeConverters
+ import PKG.jetpackcomposedemos.features.artists.data.local.ArtistDao
+ import PKG.jetpackcomposedemos.features.artists.data.local.ArtistEntity
+-import PKG.jetpackcomposedemos.features.todo.data.ToDoDao
+-import PKG.jetpackcomposedemos.features.todo.data.ToDoEntity
++import PKG.jetpackcomposedemos.features.orders.data.local.OrderEntity
+ import PKG.jetpackcomposedemos.features.orders.data.local.LineItemEntity
+ import PKG.jetpackcomposedemos.features.orders.data.local.OrderDao
+-import PKG.jetpackcomposedemos.features.orders.data.local.OrderEntity
+ 
+ @Database(
+     entities = [
+         ToDoEntity::class,
+         OrderEntity::class,
+         LineItemEntity::class,
+-        ArtistEntity::class
+-        ],
++        ArtistEntity::class],
+     version = 3,
+     exportSchema = true,
+     autoMigrations = [
+@@ -39,13 +38,13 @@ abstract class AppDatabase: RoomDatabase() {
+         @Volatile // don't let background threads cache the null value
+         private var INSTANCE: AppDatabase? = null
+ 
+-        fun getDatabase(context: Context): AppDatabase {
++        fun getDataBase(context: Context): AppDatabase {
+             // fetch or create the database
+             return INSTANCE ?: synchronized(this) {
+                 val instance = Room.databaseBuilder(
+                     context.applicationContext,
+                     AppDatabase::class.java,
+-                    "app_database"
++                    "app.database"
+                 ).build()
+                 INSTANCE = instance
+                 instance
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/Converters.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/Converters.kt
+index ae2169b..adecbd7 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/Converters.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/Converters.kt
+@@ -5,8 +5,8 @@ import java.time.Instant
+ import java.time.LocalDateTime
+ import java.time.ZoneOffset
+ 
+-class Converters {
+ 
++class Converters {
+     @TypeConverter
+     fun fromLocalDateTime(value: LocalDateTime?): Long?{
+         return value?.toInstant(ZoneOffset.UTC)?.toEpochMilli()
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/DatabaseModule.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/DatabaseModule.kt
+index 1705c5a..5794b7c 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/DatabaseModule.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/core/room/DatabaseModule.kt
+@@ -18,11 +19,11 @@ class DatabaseModule {
+ 
+     @Provides
+     @Singleton
+-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
++    fun providesDatabase(@ApplicationContext context: Context): AppDatabase {
+         return  Room.databaseBuilder(
+             context.applicationContext,
+             AppDatabase::class.java,
+-            "app_database"
++            "app.database"
+         ).build()
+     }
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/ArtistDto.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/ArtistDto.kt
+index a8530a7..e0c08fb 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/ArtistDto.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/ArtistDto.kt
+@@ -8,5 +8,6 @@ data class ArtistDto(
+     val imageUrl: String,
+     val description: String,
+     val tags: String
+-)
++)  {
+ 
++}
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/OfflineFirstArtistRepository.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/OfflineFirstArtistRepository.kt
+index 3d63744..11cc2fc 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/OfflineFirstArtistRepository.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/OfflineFirstArtistRepository.kt
+@@ -1,11 +1,11 @@
+ ﻿package PKG.jetpackcomposedemos.features.artists.data
+ 
+ import PKG.jetpackcomposedemos.features.artists.data.local.ArtistDao
++import PKG.jetpackcomposedemos.features.artists.domain.ArtistRepository
+ import PKG.jetpackcomposedemos.features.artists.data.local.ArtistEntityMapper
+ import PKG.jetpackcomposedemos.features.artists.domain.Artist
+-import PKG.jetpackcomposedemos.features.artists.domain.ArtistRepository
+-import kotlinx.coroutines.flow.Flow
+ import kotlinx.coroutines.flow.map
++import kotlinx.coroutines.flow.Flow
+ import javax.inject.Inject
+ import javax.inject.Singleton
+ 
+@@ -15,10 +16,10 @@ class OfflineFirstArtistRepository @Inject constructor(
+     private val remote: ArtistDataSource
+ ): ArtistRepository {
+ 
+-    override fun observeArtists(): Flow<List<Artist>> =
+-        artistDao.observeArtists().map { list ->
++    override fun observeArtists() = artistDao.observeArtists().map {list ->
+         list.map { entity ->
+             ArtistEntityMapper.toDomain(entity)
++
+         }
+     }
+ 
+@@ -36,14 +38,12 @@ class OfflineFirstArtistRepository @Inject constructor(
+ 
+     override suspend fun refreshArtist(id: Int){
+         val entity = ArtistEntityMapper.toEntity(remote.getArtist(id))
+-        artistDao.upsertArtists(listOf(entity))
++        artistDao.upsertArtist(listOf(entity))
+     }
+ 
++
+ //    suspend fun createArtist(artist: Artist){
+ //        // POST the data to the web API
+-//        refreshArtists()
++//        refreshArtist()
+ //    }
+-
+ }
+\ No newline at end of file
+-
+-
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDao.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDao.kt
+index b5b6cda..8f219ac 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDao.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/data/local/ArtistDao.kt
+@@ -16,15 +16,16 @@ interface ArtistDao {
+     @Query("SELECT * FROM artists WHERE id = :id")
+     fun observeArtist(id: Int): Flow<ArtistEntity?>
+ 
++
+     @Insert(onConflict = OnConflictStrategy.REPLACE)
+-    suspend fun upsertArtists(artists: List<ArtistEntity>)
++    suspend fun upsertArtist(artists: List<ArtistEntity>)
+ 
+     @Query("DELETE FROM artists WHERE id NOT IN (:ids)")
+     suspend fun deleteNotIn(ids: List<Int>)
+ 
+     @Transaction
+     suspend fun replaceAll(artists: List<ArtistEntity>) {
+-        upsertArtists(artists)
++        upsertArtist(artists)
+         deleteNotIn(artists.map {it.id })
+     }
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/Artist.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/Artist.kt
+index 47e9281..5fb3e6e 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/Artist.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/Artist.kt
+@@ -8,5 +8,11 @@ data class Artist (
+     val imageUrl: String,
+     val description: String,
+    val isAvailable: Boolean
+-)
++){
+ 
++// we would like a static function to generate some fake artist data
++// but kotlin does not have "Static" keyword to create class-level function
++// Instead, we do it using a "companion object"
++
++
++}
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetArtistUseCase.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetArtistUseCase.kt
+index 9245896..ce34f58 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetArtistUseCase.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetArtistUseCase.kt
+@@ -1,6 +1,5 @@
+ ﻿package PKG.jetpackcomposedemos.features.artists.domain
+ 
+-import PKG.jetpackcomposedemos.features.artists.data.DefaultArtistRepository
+ import kotlinx.coroutines.flow.Flow
+ import javax.inject.Inject
+ 
+@@ -8,7 +7,7 @@ class GetArtistUseCase @Inject constructor(
+     private val artistRepository: ArtistRepository
+ ) {
+ 
+-    operator fun invoke(id: Int): Flow<Artist?> {
++    suspend operator fun invoke(id: Int): Flow<Artist?> {
+         return artistRepository.observeArtist(id)
+     }
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCase.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCase.kt
+index 11b74a3..39febf8 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCase.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCase.kt
+@@ -1,7 +1,7 @@
+ ﻿package PKG.jetpackcomposedemos.features.artists.domain
+ 
+-import PKG.jetpackcomposedemos.features.artists.data.DefaultArtistRepository
+ import kotlinx.coroutines.flow.Flow
++
+ import kotlinx.coroutines.flow.map
+ import javax.inject.Inject
+ import javax.inject.Singleton
+@@ -19,7 +19,7 @@ class GetAvailableArtistsUseCase @Inject constructor(
+                 .filter { it.isAvailable }
+                 .sortedBy { it.name }
+             }
+-    }
+ 
+     }
+ 
++}
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistBookingCard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistBookingCard.kt
+index 33856aa..37d9825 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistBookingCard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistBookingCard.kt
+@@ -16,12 +16,13 @@ import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ 
+ @Composable
+ fun ArtistBookingCard(artist: Artist) {
+-    Log.d("ComposeDemo", "ArtistBookingCard: composing")
+-    // longer syntax, works with the mutableState wrapper around our value
++    Log.d("Compose Demo", "ArtistBookingCard: Composing")
++// longer syntax, works with mutableState wrapper around our values
+ //    val selectedState = remember {
+ //        mutableStateOf(false)
+ //    }
+-    // shorter syntax, works directly with our value
++
++    // shorter syntax
+     var isSelected  by remember {
+         mutableStateOf(false)
+     }
+@@ -32,7 +35,7 @@ fun ArtistBookingCard(artist: Artist) {
+         ArtistInformation(artist = artist)
+         BookingControls(
+             isSelected = isSelected,
+-            onSelectionChanged = {
++            onSelectionChange = {
+                 isSelected = !isSelected
+             }
+         )
+@@ -42,8 +45,7 @@ fun ArtistBookingCard(artist: Artist) {
+ @Composable
+ fun ArtistInformation(artist: Artist) {
+ 
+-    Log.d("ComposeDemo", "ArtistInformation: composing")
+-
++    Log.d("Composed Demo", "Artist information: Composing")
+     Text(artist.name)
+     Text(artist.genre)
+ 
+@@ -52,12 +54,13 @@ fun ArtistInformation(artist: Artist) {
+ @Composable
+ fun BookingControls(
+     isSelected: Boolean,
+-    onSelectionChanged: () -> Unit
++    onSelectionChange: () -> Unit
++
+ ) {
+-    Log.d("ComposeDemo", "BookingControls: composing with $isSelected")
++    Log.d("Composed Demo", "Artist information: Composing with $isSelected")
+ 
+     Button(
+-        onClick = onSelectionChanged
++        onClick = onSelectionChange
+     ) {
+         Text(
+             if (isSelected) {
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCard.kt
+index 7c751a3..7c4af4a 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistCard.kt
+@@ -26,9 +26,9 @@ import PKG.jetpackcomposedemos.R
+ import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ import PKG.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
+ 
++
+ @Composable
+-fun ArtistCard(
+-    artist: Artist,
++fun ArtistCard(artist: Artist,
+                onClick: () -> Unit
+ ) {
+     var isFavorite by remember {
+@@ -50,7 +49,7 @@ fun ArtistCard(
+         colors = CardDefaults.cardColors(
+             containerColor = MaterialTheme.colorScheme.surfaceContainer
+         ),
+-        shape = MaterialTheme.shapes.medium,
++        shape = MaterialTheme.shapes.medium
+     ) {
+         Column(
+             modifier = Modifier.padding(16.dp)
+@@ -80,30 +80,26 @@ fun ArtistCard(
+                 text = artist.name,
+                 style = MaterialTheme.typography.titleMedium
+             )
+-            Text(
+-                "Genre: ${artist.genre}"
+-            )
++            Text("Genre: ${artist.genre}")
+             Text("Location: ${artist.location}")
+         }
+     }
+ 
+ }
+ 
+-
+-@Preview(showBackground = false)
++@Preview(showBackground = true)
+ @Composable
+ fun ArtistCardPreview() {
++    JetpackComposeDemosTheme {
+         val artist = Artist(
+             id = 1,
+             name = "Artist Name",
+             genre = "Genre",
+             location = "Location",
+-        imageUrl = "",
+-        description = "",
+-        isAvailable = true,
++            imageUrl = "Image URL",
++            description = "Description",
++            isAvailable = true
+         )
+-
+-    JetpackComposeDemosTheme {
+         ArtistCard(
+             artist = artist,
+             onClick = {}
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDetails.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDetails.kt
+index f65a2e1..90f24a4 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDetails.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDetails.kt
+@@ -34,7 +36,7 @@ fun ArtistDetails(
+     val state by viewModel.uiState.collectAsState()
+ 
+     LaunchedEffect(artistId) {
+-        viewModel.loadArtist(artistId)
++        viewModel.loadArtist((artistId))
+     }
+ 
+     when (state) {
+@@ -73,17 +75,14 @@ fun ArtistDetails(
+         }
+         is LoadableState.Error -> {
+             val message = (state as LoadableState.Error).message
+-            Text(
+-                "Error: $message",
++            Text("Error: $message",
+             color = MaterialTheme.colorScheme.error
+             )
+         }
+     }
+-
+-
+ }
+ 
+-//@Preview(showBackground = false)
++//@Preview(showBackground = true)
+ //@Composable
+ //fun ArtistDetailsPreview(){
+ //        val artist = Artist(
+@@ -95,11 +94,7 @@ fun ArtistDetails(
+ //            description = "This all-female classic rock/heavy metal band will get you up and moving.",
+ //            tags = "Heavy Rock,Party,Loud",
+ //        )
+-//
+ //    JetpackComposeDemosTheme {
+-//        ArtistDetails(
+-//            artist = artist
+-//        )
++//        ArtistDetails(artist = artist)
+ //    }
+ //}
+\ No newline at end of file
+-
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectory.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectory.kt
+index cf4d32d..a074099 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectory.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectory.kt
+@@ -13,32 +13,33 @@ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.padding
+-import androidx.compose.material3.Icon
+-import androidx.compose.material3.IconButton
+-import androidx.compose.material3.Scaffold
+-import androidx.compose.material3.Text
+-import androidx.compose.material3.TopAppBar
+-import androidx.compose.runtime.Composable
+-import androidx.compose.ui.unit.dp
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.automirrored.filled.ArrowBack
+-import androidx.compose.material3.ExperimentalMaterial3Api
+-import androidx.compose.ui.Modifier
+ import androidx.compose.material.icons.filled.Filter
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.ButtonDefaults
++import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.ExtendedFloatingActionButton
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.ModalBottomSheet
++import androidx.compose.material3.Scaffold
++import androidx.compose.material3.Text
++import androidx.compose.material3.TopAppBar
+ import androidx.compose.material3.VerticalDivider
++import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
+ import androidx.compose.ui.tooling.preview.Preview
++import androidx.compose.ui.unit.dp
+ import PKG.jetpackcomposedemos.core.presentation.TextFilter
+-import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ import PKG.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
++import PKG.jetpackcomposedemos.features.artists.domain.Artist
++
+ 
+-@OptIn(ExperimentalMaterial3Api::class)
+ @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
++@OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+ fun ArtistDirectory(
+     state : ArtistDirectoryState,
+@@ -52,8 +53,7 @@ fun ArtistDirectory(
+ 
+     Scaffold(
+         topBar = {
+-            Column {
+-                TopAppBar(
++            Column{  TopAppBar(
+                 title = {
+                     Text("Available Artists")
+                 },
+@@ -74,9 +74,9 @@ fun ArtistDirectory(
+         },
+         floatingActionButton = {
+             ExtendedFloatingActionButton(
+-                text = { Text("Show filter") },
++                text = { Text("Show Filter")},
+                 icon = {
+-                    Icon(Icons.Filled.Filter, contentDescription = "Show filter")
++                    Icon(Icons.Filled.Filter, contentDescription = "Filter")
+                 },
+                 onClick = {
+                     onShowFilterChange(true)
+@@ -104,8 +104,10 @@ fun ArtistDirectory(
+                     modifier = Modifier.weight(1f),
+                     verticalArrangement = Arrangement.spacedBy(12.dp)
+                 ){
+-                    Text("Selected artist")
++                    Text("Selected Artist")
++
+                     val selectedArtist = state.selectedArtist
++
+                     AnimatedVisibility(
+                         visible = selectedArtist != null,
+                         enter = fadeIn() + expandVertically(expandFrom = Alignment.Top) ,
+@@ -141,7 +144,7 @@ fun ArtistDirectory(
+                     verticalArrangement = Arrangement.spacedBy(12.dp)
+                 ){
+                     Text(
+-                        text = "Filter Artists",
++                        text = "Filter Artist",
+                         style = MaterialTheme.typography.titleSmall
+                     )
+                     TextFilter(
+@@ -198,10 +200,9 @@ fun ArtistDirectory(
+ fun CompactArtistDirectoryPreview(){
+   ArtistDirectory(
+       state = ArtistDirectoryState(),
+-        useTwoPaneLayout = false,
++      useTwoPaneLayout = false
+   )
+ }
+-
+ @Preview(
+     name = "Expanded View",
+     widthDp = 900,
+@@ -211,7 +212,7 @@ fun CompactArtistDirectoryPreview() {
+ fun ExpandedArtistDirectoryPreview(){
+     ArtistDirectory(
+         state = ArtistDirectoryState(),
+-        useTwoPaneLayout = true,
++        useTwoPaneLayout = true
+     )
+ }
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryRoute.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryRoute.kt
+index 5cf02e8..7b286c8 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryRoute.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/composables/ArtistDirectoryRoute.kt
+@@ -29,6 +31,7 @@ fun ArtistDirectoryRoute(
+         onBack = onBack,
+         onArtistSelected = {
+             viewModel.setSelectedArtist(it)
++            // in two pane the details show on the right, so only navigate in one pane
+             if (!useTwoPaneLayout) {
+                 onArtistSelected(it)
+             }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryState.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryState.kt
+index 92dc990..71f118f 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryState.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryState.kt
+@@ -13,10 +13,8 @@ data class ArtistDirectoryState(
+ ){
+     val displayedArtists: List<Artist>
+         get() = artists.filter {
+-            val matchesGenre = genreFilter == "" || it.genre.contains(genreFilter, ignoreCase = true)
+-            val matchesLocation = locationFilter == "" || it.location.contains(locationFilter, ignoreCase = true)
+-
+-            matchesGenre && matchesLocation
++            (genreFilter == "" || it.genre.contains(genreFilter, ignoreCase = true)) &&
++                    (locationFilter == "" || it.location.contains(locationFilter, ignoreCase = true))
+         }
+ 
+     val selectedArtist: Artist?
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDetailsViewModel.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDetailsViewModel.kt
+index cb98807..acbf1f7 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDetailsViewModel.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDetailsViewModel.kt
+@@ -3,9 +3,10 @@
+ import androidx.lifecycle.ViewModel
+ import androidx.lifecycle.viewModelScope
+ import PKG.jetpackcomposedemos.core.LoadableState
+-import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ import PKG.jetpackcomposedemos.features.artists.domain.GetArtistUseCase
++import PKG.jetpackcomposedemos.features.artists.domain.Artist
+ import PKG.jetpackcomposedemos.features.artists.domain.RefreshArtistUseCase
++
+ import dagger.hilt.android.lifecycle.HiltViewModel
+ import kotlinx.coroutines.CancellationException
+ import kotlinx.coroutines.Job
+@@ -32,7 +33,7 @@ class ArtistDetailsViewModel @Inject constructor(
+     private var loadedId: Int? = null
+ 
+     fun loadArtist(id: Int) {
+-        // Don't restart (and flash loading) if this id is already being observed
++      // Don't need to restart (and flash loading) if this id is already being observed
+         if(id == loadedId && loadJob?.isActive == true) return
+ 
+         loadedId = id
+@@ -45,11 +46,9 @@ class ArtistDetailsViewModel @Inject constructor(
+             launch {
+                 try{
+                     refreshArtist(id)
+-                }
+-                catch (e: CancellationException) {
++                } catch(e: CancellationException) {
+                     throw e
+-                }
+-                catch (e: Exception) {
++                } catch (e: Exception) {
+                     // with a cached copy on screen, a failed refresh is silent
+                     if(!hadCache) {
+                         _uiState.value = LoadableState.Error(
+@@ -65,7 +64,7 @@ class ArtistDetailsViewModel @Inject constructor(
+                     artist != null -> _uiState.value = LoadableState.Success(artist)
+                     hadCache -> _uiState.value = LoadableState.Empty // temporary state while the refresh is still underway
+                     // no other useful cases - stay in loading state
+-                    // until the refresh either writes to the db or fails
++                    // until the refresh either write to the db or fails
+                 }
+             }
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDirectoryViewModel.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDirectoryViewModel.kt
+index 169a120..3827d87 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDirectoryViewModel.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/artists/presentation/viewmodels/ArtistDirectoryViewModel.kt
+@@ -7,13 +7,14 @@ import PKG.jetpackcomposedemos.features.artists.domain.GetAvailableArtistsUseCas
+ import PKG.jetpackcomposedemos.features.artists.domain.RefreshArtistsUseCase
+ import PKG.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
+ import dagger.hilt.android.lifecycle.HiltViewModel
++import kotlinx.coroutines.CancellationException
+ import kotlinx.coroutines.flow.MutableStateFlow
+ import kotlinx.coroutines.flow.StateFlow
+ import kotlinx.coroutines.flow.asStateFlow
+ import kotlinx.coroutines.flow.update
+ import kotlinx.coroutines.launch
+ import javax.inject.Inject
+-import kotlinx.coroutines.CancellationException
++
+ 
+ @HiltViewModel
+ class ArtistDirectoryViewModel @Inject constructor(
+@@ -26,16 +27,17 @@ class ArtistDirectoryViewModel @Inject constructor(
+         ArtistDirectoryState()
+     )
+ 
+-    // expose (publicly) a read-only view of the state object
++
++    // expose (publicly) a rea-only view of the state object
+     val uiState: StateFlow<ArtistDirectoryState> = _uiState.asStateFlow()
+ 
+     init {
+-        // establish a subscription to the observable collection
+-        // of artists from our Room db
++        // establishes a subscription to the observable collection
++        // of artists from our room
+         viewModelScope.launch {
+-            // by subscribing (collecting) inside the viewModelScope
++            // the subscribing (collecting) inside the viewModelScope
+             // the subscription will be automatically released and disposed
+-            // when the viewModel is destroyed (i.e. when the user
++            //when the viewModel is destroyed (i.e when the user
+             //  navigates away from this screen)
+             getAvailableArtists().collect { artists ->
+                 _uiState.update { currentState ->
+@@ -48,11 +50,12 @@ class ArtistDirectoryViewModel @Inject constructor(
+     }
+ 
+     // loadArtists does not get the data for the view,
+-    // instead it refreshes the local Room db
++    // insteasd it refreshes the local Room db
+     fun loadArtists() {
+         // call an async data loading method and we are not in an async method
+         if(_uiState.value.isRefreshing) return
+ 
++        // call an async data loading method and we are not in an async method
+         viewModelScope.launch {
+             _uiState.update { currentState ->
+                 currentState.copy (
+@@ -64,10 +67,10 @@ class ArtistDirectoryViewModel @Inject constructor(
+             try {
+                 refreshArtists()
+                 _uiState.update { it.copy(isRefreshing = false)}
+-            }
+-            catch (e: CancellationException) {
++
++            }  catch (e: CancellationException) {
+                 // NEVER swallow a CancellationException
+-                // doing so can orphan the coroutine (suspendables)
++                // doing so can orphan the coroutine (suspendable)
+                 throw e
+             }
+             catch (e: Exception) {
+@@ -89,13 +95,14 @@ class ArtistDirectoryViewModel @Inject constructor(
+     }
+ 
+ 
+-    fun updateGenreFilter(genre: String) {
++//    This approach is vulnerable to race conditioning
++//    fun updateGenreFilter(genre: String) {
++//        _uiState.value = _uiState.value.copy((genreFiler = genre)
++//    }
++//
+ 
+-        // this approach is vulnerable to race conditions
+-        // (usually triggered by async code)
+-        // so don't use this pattern in a ViewModel
+-//        _uiState.value = _uiState.value.copy(genreFilter = genre)
+ 
++    fun updateGenreFilter(genre: String) {
+         // change the state in a way that can prevent race conditions
+         _uiState.update { currentState ->
+             currentState.copy(
+@@ -103,8 +110,8 @@ class ArtistDirectoryViewModel @Inject constructor(
+             )
+         }
+     }
+-
+     fun updateLocationFilter(location: String) {
++        // change the state in a way that can prevent race conditions
+         _uiState.update  {currentState ->
+             currentState.copy(
+                 locationFilter = location
+@@ -113,6 +120,7 @@ class ArtistDirectoryViewModel @Inject constructor(
+     }
+ 
+     fun updateShowFilter(show: Boolean) {
++        // change the state in a way that can prevent race conditions
+         _uiState.update  {currentState ->
+             currentState.copy(
+                 showFilter = show
+@@ -120,10 +128,10 @@ class ArtistDirectoryViewModel @Inject constructor(
+         }
+     }
+ 
+-    fun setSelectedArtist(artistId: Int) {
++    fun setSelectedArtist(artist: Int) {
+         _uiState.update {currentState ->
+             currentState.copy(
+-                selectedArtistId = artistId
++                selectedArtistId = artist
+             )
+         }
+     }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/data/FakeAuthRepository.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/data/FakeAuthRepository.kt
+index d46cfe4..29c5885 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/data/FakeAuthRepository.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/data/FakeAuthRepository.kt
+@@ -11,10 +11,10 @@ class FakeAuthRepository: AuthRepository {
+            return Result.success(User(
+                id = "abc",
+                username = "hello",
+-                token = "good for 1 free pizza"
++               token = "Good for 1 free pizza"
+            ))
+-        }
+ 
++       }
+        return Result.failure(IllegalArgumentException("Invalid credentials"))
+ 
+     }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCase.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCase.kt
+index dd3d9e9..86de4b5 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCase.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCase.kt
+@@ -5,9 +5,8 @@ import PKG.jetpackcomposedemos.features.auth.data.FakeAuthRepository
+ class LoginUseCase(
+     private val repository: AuthRepository = FakeAuthRepository()
+ ) {
+-    // using the "invoke" operator allows calling instances of the class, like a function
++    // using the invoke operator allows us to call the class as a function
+     suspend operator fun invoke(userId: String, passcode: String): Result<User> {
+-
+         if (userId.isBlank() || passcode.isBlank()) {
+             return Result.failure(IllegalArgumentException("Credentials cannot be empty"))
+         }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContent.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContent.kt
+index c77ef0e..5d77a89 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContent.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginContent.kt
+@@ -39,8 +40,10 @@ fun LoginContent(
+ 
+     val canLogin = userId.isNotBlank() && passcode.isNotBlank()
+ 
++
+     Column(
+-        modifier = Modifier.fillMaxSize()
++        modifier = Modifier
++            .fillMaxSize()
+             .padding(16.dp),
+         verticalArrangement = Arrangement.Center,
+         horizontalAlignment = Alignment.CenterHorizontally
+@@ -58,12 +62,10 @@ fun LoginContent(
+             visualTransformation = PasswordVisualTransformation()
+         )
+         Spacer(modifier = Modifier.height(8.dp))
+-        Button(
+-            onClick = {
++        Button(onClick = {
+             onLogin(userId, passcode)
+         },
+-            enabled = canLogin
+-        ) {
++            enabled = canLogin) {
+             Text("Login")
+         }
+ 
+@@ -73,19 +75,19 @@ fun LoginContent(
+             is LoginUiState.Idle -> {}
+             is LoginUiState.Loading -> CircularProgressIndicator()
+             is LoginUiState.Success -> {
+-
+-                val user = uiState.user
+-
++                // cast uiState as LoginUiState.Success so we can get its user property
++                val user = (uiState as LoginUiState.Success).user
+                 Text("Welcome, ${user.username}")
+                 LaunchedEffect(user) {
+-                    // LaunchedEffect lets us invoke possibly suspend functions
+-                    // from within a composable
++                    // LaunchedEffect lets us invoke possibly suspend function
++                    // from a within a composable
+                     onLoginSuccess(user)
+                 }
+             }
++
+             is LoginUiState.Error -> {
+                 Text(
+-                    "Error: ${uiState.message}",
++                    "Error: ${(uiState as LoginUiState.Error).message}",
+                     color = MaterialTheme.colorScheme.error
+                 )
+             }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModel.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModel.kt
+index 8fac103..a1c0968 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModel.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModel.kt
+@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
+ import kotlinx.coroutines.launch
+ 
+ class LoginViewModel(
+-    private val loginUseCase: LoginUseCase = LoginUseCase()
++    private val loginUseCase: LoginUseCase = LoginUseCase(),
+ ): ViewModel() {
+ 
+     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
+@@ -18,12 +18,12 @@ class LoginViewModel(
+ 
+     fun login(userId: String, passcode: String) {
+ 
+-        // we inherited viewModelScope from ViewModel
+-        // (this allows us to launch suspendable things from a non-suspendable function)
++        // inherited viewModelScope from ViewModel
++        // (This allows us to have launch suspendable things from a non-suspendable function)
+         viewModelScope.launch {
+         _uiState.value = LoginUiState.Loading
+ 
+-            // execute our use case
++            // execute out use case
+             loginUseCase(userId, passcode)
+                 .onSuccess { user ->
+                     _uiState.value = LoginUiState.Success(user)
+@@ -31,9 +32,8 @@ class LoginViewModel(
+                 .onFailure { error ->
+                     _uiState.value = LoginUiState.Error(error.message ?: "Unknown error")
+                 }
+-        }
+ 
+         }
+ 
+-
++    }
+ }
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/domain/BoardMember.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/domain/BoardMember.kt
+index 7d386ce..bc2a5ba 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/domain/BoardMember.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/domain/BoardMember.kt
+@@ -45,10 +48,9 @@ data class BoardMember (
+                     imageUrl = "/images/LaurelBeasley.jpg",
+                     bio = "<h3>Education</h3><ul><li>MS in Information Technology from MIT</li></ul><h3>History/Accomplishments</h3><p>Spent college summers licensing pogo sticks for the government. A real dynamo when it comes to deploying glass worldwide. Spent 2002 - 2008 exporting beauty for electricians. Spent high school summers training circus clowns in Pensacola, FL. Spent several months supervising the production of human growth hormone worldwide.</p>"
+                 )
++
+             )
+-        }
+ 
+         }
+-
+-
++    }
+ }
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberCard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberCard.kt
+index 1c604ab..8c3fe0a 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberCard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberCard.kt
+@@ -14,10 +14,8 @@ import PKG.jetpackcomposedemos.features.boardmembers.domain.BoardMember
+ import PKG.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
+ 
+ @Composable
+-fun BoardMemberCard(
+-    member: BoardMember,
+-    onClick: () -> Unit = {}
+-) {
++fun BoardMemberCard(member: BoardMember,
++                    onClick: () -> Unit) {
+ 
+     Card(
+         modifier = Modifier
+@@ -52,7 +50,8 @@ fun BoardMemberCardPreview() {
+ 
+     JetpackComposeDemosTheme {
+         BoardMemberCard(
+-            member = member
++            member = member,
++            onClick = {}
+         )
+     }
+ }
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberDetails.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberDetails.kt
+index 7133d70..6b7ff2a 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberDetails.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberDetails.kt
+@@ -1,10 +1,10 @@
+ ﻿package PKG.jetpackcomposedemos.features.boardmembers.presentation
+ 
+-import androidx.compose.runtime.Composable
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.text.AnnotatedString
+ import androidx.compose.ui.text.fromHtml
+@@ -30,11 +30,7 @@ fun BoardMemberDetails(boardMember: BoardMember) {
+             modifier = Modifier.size(250.dp)
+         )
+ 
+-        // bio content is HTML (but simple, formatting-related HTML)
++        // bio content is HTML
+         Text(AnnotatedString.fromHtml(boardMember.bio))
+-
+     }
+-
+ }
+-
+-
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberList.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberList.kt
+index 5ff034e..d452d70 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberList.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/boardmembers/presentation/BoardMemberList.kt
+@@ -15,19 +15,18 @@ import androidx.compose.runtime.Composable
+ import androidx.compose.ui.unit.dp
+ import PKG.jetpackcomposedemos.features.boardmembers.domain.BoardMember
+ 
+-@OptIn(ExperimentalMaterial3Api::class)
+ @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
++@OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+ fun BoardMemberList(
+     members: List<BoardMember>,
+     onMemberSelected: (Int) -> Unit,
+     onBack: () -> Unit
+-) {
+-    Scaffold(
++) {Scaffold(
+ topBar = {
+     TopAppBar(
+         title = {
+-                    Text("Kazoo Board of Directors")
++            Text("Board Members")
+         },
+         navigationIcon = {
+             IconButton(onClick = onBack){
+@@ -38,9 +37,7 @@ fun BoardMemberList(
+             }
+         }
+     )
+-        }
+-    ) {
+-        Column(
++} ){ Column(
+             verticalArrangement = Arrangement.spacedBy(8.dp)
+         ) {
+             members.forEach {member ->
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/DefaultOrderRepository.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/DefaultOrderRepository.kt
+index b176283..ce5e22a 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/DefaultOrderRepository.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/DefaultOrderRepository.kt
+@@ -3,8 +3,8 @@
+ import PKG.jetpackcomposedemos.core.ApplicationScope
+ import PKG.jetpackcomposedemos.features.orders.data.local.OrderDao
+ import PKG.jetpackcomposedemos.features.orders.data.local.OrderEntityMapper
+-import PKG.jetpackcomposedemos.features.orders.domain.Order
+ import PKG.jetpackcomposedemos.features.orders.domain.OrderRepository
++import PKG.jetpackcomposedemos.features.orders.domain.Order
+ import kotlinx.coroutines.CoroutineScope
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.launch
+@@ -21,7 +21,7 @@ class DefaultOrderRepository @Inject constructor(
+         val orders = OrderMapper.mapToDomain(data)
+ 
+         // start a background task (on another thread)
+-        // to store these orders to Room db
++        // to store the orders to Room db
+         scope.launch(Dispatchers.IO) {
+             try {
+                 orders.map {
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/LocalOnlyOrderRepository.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/LocalOnlyOrderRepository.kt
+index a17b326..9f8ab5c 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/LocalOnlyOrderRepository.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/LocalOnlyOrderRepository.kt
+@@ -16,8 +17,6 @@ class LocalOnlyOrderRepository @Inject constructor(
+        return orderDao.getOrdersWithLineItems().map {
+            OrderEntityMapper.mapToDomain(it)
+        }
+-    }
+ 
+     }
+-
+-
++}
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OderLineItemDto.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderLineItemDto.kt
+similarity index 95%
+rename from prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OderLineItemDto.kt
+rename to mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderLineItemDto.kt
+index 7931188..0ca0382 100644
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapper.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapper.kt
+index 85703f4..9c1b9c1 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapper.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapper.kt
+@@ -8,7 +8,7 @@ object OrderMapper {
+ 
+     fun mapToDomain(items: List<OrderLineItemDto>): List<Order> {
+ 
+-        val orderGroupMap = items.groupBy { it.orderNumber }
++        val orderGroupMap = items.groupBy({ it.orderNumber})
+ 
+         return orderGroupMap.map{ (orderNumber, orderLineItems) ->
+             val firstLine = orderLineItems.first()
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/LineItemEntity.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/LineItemEntity.kt
+index a6bb37a..8977b0d 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/LineItemEntity.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/LineItemEntity.kt
+@@ -5,8 +5,8 @@ import androidx.room.ForeignKey
+ import androidx.room.Index
+ import androidx.room.PrimaryKey
+ 
+-@Entity(
+-    tableName = "order_line_items",
++
++@Entity(tableName = "order_line_items",
+     foreignKeys = [
+         ForeignKey(
+             entity = OrderEntity::class,
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderDao.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderDao.kt
+index f3c8790..73eaa54 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderDao.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderDao.kt
+@@ -9,7 +9,7 @@ import androidx.room.Transaction
+ @Dao
+ abstract class OrderDao {
+     // needs to be an abstract class instead of an interface
+-    // so we can have some code in insertOrderWithLineItems
++    // so we can have some code inSerOrderWithLineItems
+ 
+     @Insert(onConflict = OnConflictStrategy.REPLACE)
+     abstract suspend fun insertOrder(order: OrderEntity)
+@@ -19,7 +19,7 @@ abstract class OrderDao {
+ 
+     @Transaction
+     open suspend fun insertOrderWithLineItems(order: OrderWithLineItemsEntity){
+-        // a @Transaction method with a body must be "open"
++        // a transaction method with a body must be "open"
+         // to being overridden in the auto-generated child class
+         insertOrder(order.order)
+         insertLineItems(order.lineItems.map {
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderWithLineItemsEntity.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderWithLineItemsEntity.kt
+index d683cfb..1d6f1ed 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderWithLineItemsEntity.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/data/local/OrderWithLineItemsEntity.kt
+@@ -1,10 +1,11 @@
+ ﻿package PKG.jetpackcomposedemos.features.orders.data.local
+ 
+ import androidx.room.Embedded
++import androidx.room.Entity
+ import androidx.room.Relation
+ 
+-data class OrderWithLineItemsEntity(
+ 
++data class OrderWithLineItemsEntity (
+     @Embedded
+     var order: OrderEntity,
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrderSummary.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrderSummary.kt
+index 68be2ec..ed2d6ce 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrderSummary.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrderSummary.kt
+@@ -16,8 +16,8 @@ fun OrderSummary(
+     Column(
+         verticalArrangement = Arrangement.spacedBy(4.dp)
+     ){
+-        Text("Order #:${order.id}")
+-        Text("Customer: ${order.firstName} ${order.lastName}")
++        Text("order #${order.id}")
++        Text("Customer ${order.firstName} ${order.lastName}")
+         Text("Order Date: ${order.orderDate.format(formatter)}")
+         Text("Ship Date: ${order.shipDate.format(formatter)}")
+     }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersCard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersCard.kt
+index d68a6e7..1ef3913 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersCard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersCard.kt
+@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.IntrinsicSize
+ import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.fillMaxHeight
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.padding
+@@ -27,12 +28,14 @@ fun OrderCard(
+         if(useTwoPaneLayout){
+             Row(
+                 modifier = Modifier.fillMaxWidth()
+-                    // the following is necessary for the VerticalDivider
+-                    // to know the height of the row, so it can display
++                    // the following is necessary for the verticalDivider
++                    // to know the height of the row so it can display
+                     .height(IntrinsicSize.Min),
+                 horizontalArrangement = Arrangement.spacedBy(12.dp)
+             ){
+-                Box(modifier = Modifier.weight(2f).padding(12.dp)) {
++                Box(
++                    modifier = Modifier.weight(2f).padding(12.dp)
++                ){
+                     OrderSummary(order = order)
+                 }
+                 VerticalDivider()
+@@ -45,11 +48,14 @@ fun OrderCard(
+                 modifier = Modifier.fillMaxWidth(),
+                 verticalArrangement = Arrangement.spacedBy(12.dp)
+             ){
+-                Box(modifier = Modifier.padding(12.dp)) {
++                Box(modifier = Modifier.padding(12.dp)
++                ){
+                     OrderSummary(order = order)
+                 }
+                 HorizontalDivider()
+-                Box(modifier = Modifier.padding(12.dp)) {
++                Box(
++                    modifier = Modifier.padding(12.dp)
++                ){
+                     OrderLines(order = order)
+                 }
+             }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersList.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersList.kt
+index 08d6dd1..7ad6afb 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersList.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersList.kt
+@@ -20,7 +20,7 @@ fun OrdersList(
+     ){
+         items(
+             items = orders,
+-            key = { order: Order -> order.id }
++            key = { order: Order -> order.id},
+         ){ order: Order ->
+             OrderCard(
+                 order  = order,
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersScreen.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersScreen.kt
+index 08a123b..0bb8953 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersScreen.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersScreen.kt
+@@ -40,5 +40,5 @@ fun OrdersScreen(
+             )
+         }
+     }
+-}
+ 
++}
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModel.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModel.kt
+index 5ef85dc..bd8aa45 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModel.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModel.kt
+@@ -6,10 +6,10 @@ import PKG.jetpackcomposedemos.core.LoadableState
+ import PKG.jetpackcomposedemos.features.orders.domain.GetOrdersUseCase
+ import PKG.jetpackcomposedemos.features.orders.domain.Order
+ import dagger.hilt.android.lifecycle.HiltViewModel
+-import kotlinx.coroutines.CancellationException
+ import kotlinx.coroutines.flow.MutableStateFlow
+ import kotlinx.coroutines.flow.StateFlow
+ import kotlinx.coroutines.flow.asStateFlow
++import kotlinx.coroutines.CancellationException
+ import kotlinx.coroutines.launch
+ import javax.inject.Inject
+ 
+@@ -18,8 +18,9 @@ class OrdersViewModel @Inject constructor(
+     private val getOrders: GetOrdersUseCase
+ ): ViewModel() {
+ 
+-    private val _uiState: MutableStateFlow<LoadableState<List<Order>>> =
+-         MutableStateFlow(LoadableState.Loading)
++    private val _uiState: MutableStateFlow<LoadableState<List<Order>>> = MutableStateFlow(
++        LoadableState.Loading
++    )
+ 
+     val uiState: StateFlow<LoadableState<List<Order>>> = _uiState.asStateFlow()
+ 
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/data/DefaultToDoRepository.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/data/DefaultToDoRepository.kt
+index d170061..3d47678 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/data/DefaultToDoRepository.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/data/DefaultToDoRepository.kt
+@@ -1,10 +1,12 @@
+ ﻿package PKG.jetpackcomposedemos.features.todo.data
+ 
+-import PKG.jetpackcomposedemos.features.todo.domain.ToDo
+ import PKG.jetpackcomposedemos.features.todo.domain.ToDoRepository
+ import javax.inject.Inject
++import PKG.jetpackcomposedemos.features.todo.domain.ToDo
++
+ 
+ class DefaultToDoRepository @Inject constructor(
++
+     private val toDoDao: ToDoDao
+ ): ToDoRepository {
+ 
+@@ -15,6 +17,11 @@ class DefaultToDoRepository @Inject constructor(
+     }
+ 
+     override suspend fun getToDo(id:Int): ToDo? {
++        // how we would do it with the map
++//        val entity = toDoDao.getToDo(id) ?: return null
++//        return ToDoMapper.toDomain(entity)
++
++        // map without the loop
+         return toDoDao.getToDo(id)?.let {
+             ToDoMapper.toDomain(it)
+         }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/CreateToDoUseCase.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/CreateToDoUseCase.kt
+index 55b1e4a..c830e60 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/CreateToDoUseCase.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/CreateToDoUseCase.kt
+@@ -7,10 +8,8 @@ import javax.inject.Singleton
+ class CreateToDoUseCase @Inject constructor (
+      private val toDoRepository: ToDoRepository
+ ) {
+-
+     suspend operator fun invoke(todo: ToDo) {
+         toDoRepository.insert(todo)
+-    }
+ 
+     }
+-
++}
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/ToDoRepository.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/ToDoRepository.kt
+index 5e36724..940e853 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/ToDoRepository.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/ToDoRepository.kt
+@@ -3,10 +4,10 @@
+ interface ToDoRepository {
+ 
+     suspend fun getToDos(): List<ToDo>
++
+     suspend fun getToDo(id: Int): ToDo?
++
+     suspend fun insert(todo: ToDo)
+-    suspend fun update(todo: ToDo)
+ 
++    suspend fun update(todo: ToDo)
+ }
+\ No newline at end of file
+-
+-
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/UpdateToDoUseCase.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/UpdateToDoUseCase.kt
+index 0e4f2c2..343646b 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/UpdateToDoUseCase.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/domain/UpdateToDoUseCase.kt
+@@ -7,11 +8,7 @@ import javax.inject.Singleton
+ class UpdateToDoUseCase @Inject constructor (
+      private val toDoRepository: ToDoRepository
+ ) {
+-
+-    suspend operator fun invoke(toDo: ToDo) {
+-        toDoRepository.update(toDo)
++    suspend operator fun invoke(todo: ToDo) {
++        toDoRepository.update(todo)
+     }
+-
+ }
+-
+-
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoCard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoCard.kt
+index ddc2c47..bc3bb0e 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoCard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDoCard.kt
+@@ -20,7 +20,8 @@ import PKG.jetpackcomposedemos.features.todo.domain.ToDo
+ @Composable
+ fun ToDoCard(
+     toDo: ToDo,
+-    onDoubleTap: () -> Unit
++    onDoubleTap: () ->  Unit,
++
+ ) {
+     Card(
+         modifier = Modifier.fillMaxWidth()
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosScreen.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosScreen.kt
+index 1aedc7c..47cae42 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosScreen.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosScreen.kt
+@@ -18,13 +18,15 @@ fun ToDosScreen(
+ ){
+     val uiState by viewModel.uiState.collectAsState()
+ 
++
++    //runs the screen only once when the composable is created
+     LaunchedEffect(Unit) {
+         viewModel.loadToDos()
+     }
+ 
+     when (uiState) {
+         is LoadableState.Loading -> CircularProgressIndicator()
+-        is LoadableState.Empty -> Text("No to-dos")
++        is LoadableState.Empty -> Text("No todos found")
+         is LoadableState.Error -> {
+             val errorMessage = (uiState as LoadableState.Error).message
+             Text(
+@@ -45,8 +47,6 @@ fun ToDosScreen(
+                 }
+             )
+         }
+-    }
+ 
+     }
+-
+-
++}
+\ No newline at end of file
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosViewModel.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosViewModel.kt
+index 73e0938..866c185 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosViewModel.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/features/todo/presentation/ToDosViewModel.kt
+@@ -19,10 +21,10 @@ class ToDosViewModel @Inject constructor(
+     private val getToDos: GetToDosUseCase,
+     private val createToDo: CreateToDoUseCase,
+     private val updateToDo: UpdateToDoUseCase
++
+ ): ViewModel() {
+ 
+-    private val _uiState: MutableStateFlow<LoadableState<List<ToDo>>> =
+-        MutableStateFlow(LoadableState.Loading)
++    private val _uiState: MutableStateFlow<LoadableState<List<ToDo>>> = MutableStateFlow(LoadableState.Loading)
+ 
+     val uiState: StateFlow<LoadableState<List<ToDo>>> = _uiState.asStateFlow()
+ 
+@@ -35,7 +38,11 @@ class ToDosViewModel @Inject constructor(
+     fun createToDo(title: String) {
+         if(title.isNotEmpty()) {
+             viewModelScope.launch {
+-                createToDo(ToDo(0, title, false))
++                createToDo(ToDo(
++                    id = 0,
++                    title = title,
++                    completed = false
++                ))
+                 loadToDos()
+             }
+         }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/ArtistsViewAdapter.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/ArtistsViewAdapter.kt
+index a9bc777..e2b0622 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/ArtistsViewAdapter.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/ArtistsViewAdapter.kt
+@@ -34,8 +33,8 @@ class ArtistsViewAdapter(
+         position: Int
+     ){
+         val artist = artists[position]
+-        Log.d("ArtistRecycler", "Binding ${artist.name} at position $position")
+         holder.bind(artist)
++        Log.d("ArtistRecycler", "Binding${artist.name} for position $position")
+     }
+ 
+     override fun getItemCount(): Int {
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistApprovalCard.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistApprovalCard.kt
+index 6d0fc99..03e3574 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistApprovalCard.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistApprovalCard.kt
+@@ -19,20 +20,12 @@ fun LegacyArtistApprovalCard(
+     ){
+         artistNameText.text = artist.name
+         genreText.text = "Genre: ${artist.genre}"
+-        locationText.text = artist.location
+-
++        locationText.text = "Location: ${artist.location}"
+         description.text = artist.description
+-
+-        approvalStatusText.text =
+-            if (isApproved) {
+-                "Approval status: Approved"
+-            } else {
+-                "Approval status: Pending"
+-            }
+-
++        approvalStatusText.text = "Approval status: ${if (isApproved) "Approved" else "Pending"}"
+         approvalButton.text =
+             if (isApproved){
+-                "Revoke Approval"
++                "Revoke approval"
+             } else {
+                 "Approve Booking "
+             }
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistList.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistList.kt
+index 437faf3..c128d84 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistList.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/legacy/LegacyArtistList.kt
+@@ -10,8 +10,9 @@ import PKG.jetpackcomposedemos.databinding.LegacyArtistListBinding
+ @Composable
+ fun LegacyArtistList(
+     artists: List<Artist>,
+-    onArtistSelected: (Int) -> Unit
++    onArtistSelected: (Int) -> Unit,
+ ) {
++
+     val adapter = remember(artists) {
+         ArtistsViewAdapter(
+             artists = artists,
+diff --git a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/ui/theme/KazooTheme.kt b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/ui/theme/KazooTheme.kt
+index d03653c..b6b4654 100644
+--- a/prof/app/src/main/java/com/PKG/jetpackcomposedemos/ui/theme/KazooTheme.kt
++++ b/mine/app/src/main/java/com/PKG/jetpackcomposedemos/ui/theme/KazooTheme.kt
+@@ -4,7 +4,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Shapes
+-import androidx.compose.material3.Typography
+ import androidx.compose.material3.darkColorScheme
+ import androidx.compose.material3.lightColorScheme
+ import androidx.compose.runtime.Composable
+@@ -13,6 +12,7 @@ import androidx.compose.ui.text.TextStyle
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
++import androidx.compose.material3.Typography
+ 
+ private val KazooLightColors =
+     lightColorScheme(
+@@ -37,9 +37,10 @@ private val KazooLightColors =
+ 
+         surface = Color(0xFFFFFBFE),
+         onSurface = Color(0xFF1C1B1F),
+-    )
+ 
++        )
+ private val KazooDarkColors =
++
+     darkColorScheme(
+         primary = Color(0xFFD0BCFF),
+         onPrimary = Color(0xFF381E72),
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/CountingArtistDataSource.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/CountingArtistDataSource.kt
+index ae50e68..a698081 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/CountingArtistDataSource.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/CountingArtistDataSource.kt
+@@ -7,11 +6,7 @@ class CountingArtistDataSource: ArtistDataSource {
+ 
+     override suspend fun getArtists(): List<ArtistDto> {
+         calls++
+-        return emptyList()
+-    }
+-
+-    override suspend fun getArtist(id: Int): ArtistDto = error("not used in these tests")
+-
++        return emptyList()}
+ 
++    override suspend fun getArtist(id: Int): ArtistDto = error("not used in the tests")
+ }
+\ No newline at end of file
+-
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/FakeArtistRepository.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/FakeArtistRepository.kt
+index 0164a2c..eab834e 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/FakeArtistRepository.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/data/FakeArtistRepository.kt
+@@ -18,10 +17,7 @@ class FakeArtistRepository(
+         artists.firstOrNull { it.id == id }
+     }
+ 
+-    // the following are not needed for these tests
++    // the following are not needed for this test
+     override suspend fun refreshArtists() = Unit
+     override suspend fun refreshArtist(id: Int) = Unit
+-
+ }
+\ No newline at end of file
+-
+-
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCaseTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistUseCaseTest.kt
+similarity index 70%
+rename from prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCaseTest.kt
+rename to mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistUseCaseTest.kt
+index cf267e5..360400e 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistsUseCaseTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/domain/GetAvailableArtistUseCaseTest.kt
+@@ -3,25 +3,19 @@
+ import PKG.jetpackcomposedemos.features.artists.data.FakeArtistRepository
+ import PKG.jetpackcomposedemos.testutil.builders.anArtist
+ import kotlinx.coroutines.test.runTest
+-import kotlinx.coroutines.flow.toList
+ import org.junit.Test
+-import kotlin.time.Duration.Companion.seconds
+ import app.cash.turbine.test
+ import junit.framework.TestCase.assertEquals
+ import kotlinx.coroutines.flow.Flow
+ import kotlinx.coroutines.flow.flow
+ import kotlinx.coroutines.flow.flowOf
+-import okio.IOException
++import java.io.IOException
+ 
+-class GetAvailableArtistsUseCaseTest {
++class GetAvailableArtistUseCaseTest {
+ 
+ //    @Test
+-//    fun `toList never finishes on a flow that never completes`() = runTest(timeout = 2.seconds) {
+-//
++//    fun `never finishes on a load that never completes`() = runTest(timeout = 2.seconds) {
+ //        val repo = FakeArtistRepository(listOf(anArtist()))
+-//
+-//        val result = GetAvailableArtistsUseCase(repo)().toList()
+-//
+ //    }
+ 
+     @Test
+@@ -42,11 +36,10 @@ class GetAvailableArtistsUseCaseTest {
+     }
+ 
+     @Test
+-    fun `emits again when the underlying data changes`() = runTest {
+-
++    fun `emits again when the underlying data changed`() = runTest {
+         val repo = FakeArtistRepository(listOf(anArtist(id = 1, name = "Abe")))
+ 
+-        GetAvailableArtistsUseCase(repo)().test {   // turbine starts observing the flow
++        GetAvailableArtistsUseCase(repo)().test {
+             assertEquals(listOf("Abe"), awaitItem().map { it.name })
+ 
+             // change the repo data
+@@ -56,10 +49,11 @@ class GetAvailableArtistsUseCaseTest {
+             )
+             assertEquals(listOf("Abe", "Bea"), awaitItem().map { it.name })
+ 
+-            repo.artists.value = listOf(anArtist(id = 1, name = "Abe", isAvailable = false))
++            repo.artists.value = listOf(
++                anArtist(id = 1, name = "Abe", isAvailable = false)
++            )
+             assertEquals(emptyList<Artist>(), awaitItem())
+         }
+-
+     }
+ 
+     @Test
+@@ -68,7 +61,7 @@ class GetAvailableArtistsUseCaseTest {
+         val repo = FakeArtistRepository(listOf(anArtist(id = 1)))
+ 
+         GetAvailableArtistsUseCase(repo)().test {
+-            skipItems(1)    // we don't care about the initial emission
++            skipItems(1) // skip the initial emission// we don't care about the initial emission
+ 
+             repo.artists.value = listOf(anArtist(id = 1))     // equal list, new instance
+ 
+@@ -78,15 +70,15 @@ class GetAvailableArtistsUseCaseTest {
+     }
+ 
+     @Test
+-    fun `propagates a failure from the repository flow`() = runTest {
+-        // new (to us) syntax to create a fake, on-the-fly, inside our test
++    fun `propegates a failure from the repository flow`() = runTest {
++        // new (to us) syntax to create a fake on-on-the-fly, inside our test
+         val failing = object : ArtistRepository by FakeArtistRepository() {
+             override fun observeArtists(): Flow<List<Artist>> = flow {
+                 emit(listOf(anArtist(name = "Abe")))
+                 throw IOException("db closed")
+             }
+         }
+-        // object : ArtistRepository by FakeArtistRepository()
++        // object: ArtistRepository nu FakeArtistRepository()
+         // this is called interface delegation
+ 
+         GetAvailableArtistsUseCase(failing)().test {
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/AsyncViewModelTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/AsyncViewModelTest.kt
+index 880570c..f8b66f1 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/AsyncViewModelTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/AsyncViewModelTest.kt
+@@ -1,9 +1,10 @@
+ ﻿package PKG.jetpackcomposedemos.features.artists.presentation
+ 
+ import androidx.lifecycle.viewModelScope
++import PKG.jetpackcomposedemos.features.artists.data.ArtistDataSource
+ import PKG.jetpackcomposedemos.features.artists.data.CountingArtistDataSource
+ import PKG.jetpackcomposedemos.features.artists.domain.AsyncRepository
+-import PKG.jetpackcomposedemos.testutil.MainDispatcherRule
++import PKG.jetpackcomposedemos.testutil.user.MainDispatcherRule
+ import junit.framework.TestCase.assertEquals
+ import kotlinx.coroutines.ExperimentalCoroutinesApi
+ import kotlinx.coroutines.cancel
+@@ -32,35 +31,37 @@ class AsyncViewModelTest {
+             viewModel.loadArtists()
+             advanceTimeBy(9_999)
+         }
+-        println("real time: $realMillis ms, virtual time: $currentTime ms")
++        println("real time is $realMillis ms virtual time $currentTime")
+ 
+         assertEquals(0, dataSource.calls)
+     }
+ 
+     @Test
+-    fun `loads artists after exactly ten seconds`() = runTest {
++    fun `load artists after ten seconds`() = runTest {
+         val dataSource = CountingArtistDataSource()
+         val viewModel = AsyncViewModel(AsyncRepository(dataSource))
+ 
+         viewModel.loadArtists()
+-        runCurrent()        // start the coroutine, but only execute up to the current time
+-                            // (which is 0, and will not advance automatically)
++        runCurrent()            // Starts the coroutine, but only execute to the current time
++                                //(qhixh ia 0, and will not advance automatically
++
++
++
+         assertEquals(0, dataSource.calls)
+         assertEquals(0, currentTime)
+ 
+-        advanceTimeBy(9_999)    // moves the clock forward, but does not run tasks
++
++        advanceTimeBy(9_999) // moves clock forward, but does not run tasks
+         runCurrent()                        // executes the tasks up to the current time
+-        assertEquals(0, dataSource.calls)   // still 1 millisecond early
+ 
++        assertEquals(0, dataSource.calls) // still 1 miliseconds early
+         advanceTimeBy(1)
+         runCurrent()
+-        assertEquals(1, dataSource.calls)   // now 10 seconds have passed
++        assertEquals(1, dataSource.calls)   // not 10 seconds have passed
+         assertEquals(10_000, currentTime)
+-
+     }
+-
+     @Test
+-    fun `eventually loads artists`() = runTest {
++    fun `eventually loads artist`() = runTest {
+         val dataSource = CountingArtistDataSource()
+         val viewModel = AsyncViewModel(AsyncRepository(dataSource))
+ 
+@@ -68,7 +69,7 @@ class AsyncViewModelTest {
+ 
+         // suppose we know this is async and takes some amount of time
+         // but we either don't know exactly how long, or it may be a variable
+-        // amount of time, and we don't care exactly how long, we just
++        // amount of time, and we don't care exactly how long, we just,
+         // need to wait until it finishes to make our assertions
+         advanceUntilIdle()          // tells the testing dispatcher to fast-forward execute
+                                     // everything in its queue until it is idle
+@@ -84,10 +83,11 @@ class AsyncViewModelTest {
+         val viewModel = AsyncViewModel(AsyncRepository(dataSource))
+ 
+         viewModel.loadArtists()
++
+         advanceTimeBy(5_000)
+         viewModel.viewModelScope.cancel()           // what happens when the screen goes away
+-        advanceUntilIdle()
+ 
++        advanceUntilIdle()
+         assertEquals(0, dataSource.calls)
+ 
+     }
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryStateFilterTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryStateFilterTest.kt
+index 04983fc..a566fb9 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryStateFilterTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/artists/presentation/state/ArtistDirectoryStateFilterTest.kt
+@@ -30,9 +30,8 @@ class ArtistDirectoryStateFilterTest(
+             anArtist(id = 1, genre = "Rock",           location = "New York, NY"),
+             anArtist(id = 2, genre = "Pop",            location = "Miami"),
+             anArtist(id = 3, genre = "Rock",           location = "Chicago"),
+-            anArtist(id = 4, genre = "Easy Listening",    location = "New York, NY"),
++            anArtist(id = 4, genre = "Easy Listening", location = "New York, NY")
+         )
+-
+         @JvmStatic
+         @Parameterized.Parameters(name = "genre=''{0}'', location=''{1}'' -> {2}")
+         fun cases():List<Array<Any>> = listOf(
+@@ -41,12 +40,12 @@ class ArtistDirectoryStateFilterTest(
+ 
+             //genre only filter
+             arrayOf("Rock", "", listOf(1,3)),
+-            arrayOf("rock", "", listOf(1, 3)),      // case-insensitivity
++            arrayOf("rock", "", listOf(1,3)),
+             arrayOf("ROCK", "", listOf(1,3)),
+-            arrayOf("oc", "", listOf(1, 3)),        // substring matches
++            arrayOf("oc", "", listOf(1,3)),
+             arrayOf("Easy Listening", "", listOf(4)),
+-
+             // --- location only ---
++
+             arrayOf("", "new york", listOf(1, 4)),      // case-insensitive
+             arrayOf("", "NY",       listOf(1, 4)),      // matches the state abbreviation
+             arrayOf("", "Chicago",  listOf(3)),
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCaseTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCaseTest.kt
+index 15308f1..4fd7d30 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCaseTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/LoginUseCaseTest.kt
+@@ -1,17 +1,15 @@
+ ﻿package PKG.jetpackcomposedemos.features.auth.domain
+ 
+-import PKG.jetpackcomposedemos.testutil.builders.aUser
++import org.junit.Assert
+ import junit.framework.TestCase.assertEquals
+ import junit.framework.TestCase.assertTrue
+ import kotlinx.coroutines.test.runTest
+-import org.junit.Assert
+ import org.junit.Test
+ 
+-
+ class LoginUseCaseTest {
+-
+     @Test
+     fun  `given blank user id, when logging in, then fails without calling the repository`()  = runTest {
++
+         val repo = RecordingAuthRepository()
+         val useCase = LoginUseCase(repo)
+ 
+@@ -22,28 +20,26 @@ class LoginUseCaseTest {
+         assertEquals(0, repo.loginCalls)
+     }
+ 
++
+     @Test
+-    fun `given valid credentials, when logging in, then returns the repository's user`() = runTest {
++    fun  `given valid credentials when logging in, then returns the repository's user`() = runTest {
+         val expected = aUser(username = "hello")
+         val repo = RecordingAuthRepository(result = Result.success(expected))
+         val useCase = LoginUseCase(repo)
+ 
+-        val result = useCase("drew", "somepassword")
++        val result = useCase("john","somepassword" )
+ 
+         assertEquals(expected, result.getOrNull())
+-        assertEquals("drew", repo.lastUserId)
++        assertEquals("john", repo.lastUserId)
+         assertEquals("somepassword", repo.lastPasscode)
+     }
+ 
+-
+-
+     private fun assertEmptyCredentialsFailure(result: Result<User>) {
+-        Assert.assertTrue(result.isFailure)
+-        Assert.assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+-        Assert.assertEquals("Credentials cannot be empty", result.exceptionOrNull()?.message)
++        assertTrue(result.isFailure)
++        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
++        assertEquals("Credentials cannot be empty", result.exceptionOrNull()?.message)
+     }
+ 
+-
+     @Test
+     fun `given whitespace-only user id, when logging in, then fails with empty credentials message`() = runTest {
+         val repo = RecordingAuthRepository()
+@@ -65,10 +57,9 @@ class LoginUseCaseTest {
+     @Test
+     fun `given whitespace-only passcode of valid length, when logging in, then fails as empty rather than too short`() = runTest {
+         val repo = RecordingAuthRepository()
+-
+         // 6 spaces: long enough to pass the length rule, but blank
+-        val result = LoginUseCase(repo)("hello", "      ")
+ 
++        val result = LoginUseCase(repo)("hello", "      ")
+         assertEmptyCredentialsFailure(result)
+     }
+ 
+@@ -87,57 +77,53 @@ class LoginUseCaseTest {
+         val repo = RecordingAuthRepository()
+ 
+         LoginUseCase(repo)("", "")
+-
+-        Assert.assertEquals(0, repo.loginCalls)
++        assertEquals(0, repo.loginCalls)
+     }
+ 
+-
+     @Test
+     fun `given passcode of 4 characters, when logging in, then fails with minimum length message`() = runTest {
+-        val repo = RecordingAuthRepository()
+ 
++        val repo = RecordingAuthRepository()
+         val result = LoginUseCase(repo)("hello", "abcd")
+ 
+-        Assert.assertTrue(result.isFailure)
+-        Assert.assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+-        Assert.assertEquals(
++        assertTrue(result.isFailure)
++        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
++        assertEquals(
+             "Passcode must be at least 5 characters",
+             result.exceptionOrNull()?.message
+         )
+-        Assert.assertEquals(0, repo.loginCalls)
++        assertEquals(0, repo.loginCalls)
+     }
+ 
+     @Test
+     fun `given passcode of exactly 5 characters, when logging in, then passes validation and calls the repository`() = runTest {
+         val repo = RecordingAuthRepository()
+-
+         val result = LoginUseCase(repo)("hello", "abcde")
+ 
+-        Assert.assertTrue(result.isSuccess)
+-        Assert.assertEquals(1, repo.loginCalls)
++        assertTrue(result.isSuccess)
++        assertEquals(1, repo.loginCalls)
+     }
+ 
+-
+     @Test
+     fun `given valid credentials, when logging in, then passes them to the repository unchanged`() = runTest {
++
+         val repo = RecordingAuthRepository()
+ 
+         LoginUseCase(repo)("hello", "world1")
+-
+-        Assert.assertEquals(1, repo.loginCalls)
+-        Assert.assertEquals("hello", repo.lastUserId)
+-        Assert.assertEquals("world1", repo.lastPasscode)
++        assertEquals(1, repo.loginCalls)
++        assertEquals("hello", repo.lastUserId)
++        assertEquals("world1", repo.lastPasscode)
+     }
+ 
++
++
+     @Test
+     fun `given repository rejects the credentials, when logging in, then propagates the failure`() = runTest {
+         val failure = IllegalArgumentException("Invalid credentials")
+         val repo = RecordingAuthRepository(result = Result.failure(failure))
+-
+         val result = LoginUseCase(repo)("hello", "wrong-pass")
+ 
+-        Assert.assertTrue(result.isFailure)
+-        Assert.assertEquals(failure, result.exceptionOrNull())
++        assertTrue(result.isFailure)
++        assertEquals(failure, result.exceptionOrNull())
+     }
+-
+ }
+\ No newline at end of file
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/RecordingAuthRepository.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/RecordingAuthRepository.kt
+index 53a297a..e65eff9 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/RecordingAuthRepository.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/domain/RecordingAuthRepository.kt
+@@ -1,7 +1,10 @@
+ ﻿package PKG.jetpackcomposedemos.features.auth.domain
+ 
+-import PKG.jetpackcomposedemos.testutil.builders.aUser
+-
++fun aUser(
++    id: String = "user-1",
++    username: String = "testuser",
++    token: String = "test-token"
++) = User(id,username, token)
+ 
+ class RecordingAuthRepository(
+     private val result: Result<User> = Result.success(aUser())
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModelTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModelTest.kt
+index 0903285..65202b3 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModelTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/auth/presentation/LoginViewModelTest.kt
+@@ -2,18 +2,12 @@
+ 
+ import PKG.jetpackcomposedemos.features.auth.domain.LoginUseCase
+ import PKG.jetpackcomposedemos.features.auth.domain.RecordingAuthRepository
+-import PKG.jetpackcomposedemos.testutil.MainDispatcherRule
+-import PKG.jetpackcomposedemos.testutil.builders.aUser
++import PKG.jetpackcomposedemos.features.auth.domain.aUser
++import PKG.jetpackcomposedemos.testutil.user.MainDispatcherRule
+ import junit.framework.TestCase.assertEquals
+-import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.ExperimentalCoroutinesApi
+-import kotlinx.coroutines.test.StandardTestDispatcher
+ import kotlinx.coroutines.test.advanceUntilIdle
+-import kotlinx.coroutines.test.resetMain
+ import kotlinx.coroutines.test.runTest
+-import kotlinx.coroutines.test.setMain
+-import org.junit.After
+-import org.junit.Before
+ import org.junit.Rule
+ import org.junit.Test
+ 
+@@ -21,12 +16,15 @@ import org.junit.Test
+ class LoginViewModelTest {
+ 
+     @get:Rule
+-    val mainDispatcherRule = MainDispatcherRule()
++    private val mainDispatcherRule = MainDispatcherRule()
+     // NOTE: when using this Rule approach (instead of @Before and @After)
+      // do NOT create the ViewModel in a class constructor, or
+     // property initializer - those execute before the test starting
+     // method in our MainDispatcherRule
+-    // (create the ViewModel inside the test, or in its own @Before fun)
++    // (Create the ViewModel inside the test, or its own @Before fun)
++
++
++
+ 
+     @Test
+     fun `given valid credentials, when logging in, then state is Success` () = runTest {
+@@ -35,7 +34,6 @@ class LoginViewModelTest {
+         val viewModel = LoginViewModel(LoginUseCase(repo))
+ 
+         viewModel.login("hello", "world")
+-        // assertions on the initial state
+         advanceUntilIdle() // wait until the coroutine launched by login() is finished
+ 
+         assertEquals(LoginUiState.Success(user), viewModel.uiState.value)
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/FakeOrderRepository.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/FakeOrderRepository.kt
+index 9c53a4d..8a8b13d 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/FakeOrderRepository.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/FakeOrderRepository.kt
+@@ -15,9 +14,8 @@ class FakeOrderRepository(
+         getOrdersCalls++
+ //        if(failure != null) {
+ //            throw failure
+-//        }
++//        } else
+         failure?.let {throw it}
+-
+         return orders
+     }
+ }
+\ No newline at end of file
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapperTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapperTest.kt
+index 64f8871..c4c913e 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapperTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/data/OrderMapperTest.kt
+@@ -8,9 +8,8 @@ class OrderMapperTest {
+ 
+     @Test
+     fun `given two lines with the same order number, when mapping, then produces one order with both line items` ()  {
+-
+         // create a collection of OrderLineItemDto
+-        // (only need to specify the properties that are relevant to this test)
++        // (only need to specify the proportion that are relevant to this test)
+         val dtos = listOf(
+             aLineItemDto(id = 1, orderNumber = 5, productName = "Lamp") ,
+             aLineItemDto(id = 2, orderNumber = 5, productName = "Shade")
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/domain/GetOrdersUseCaseTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/domain/GetOrdersUseCaseTest.kt
+index 31f999e..b4b644f 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/domain/GetOrdersUseCaseTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/domain/GetOrdersUseCaseTest.kt
+@@ -8,27 +8,27 @@ import org.junit.Test
+ import java.time.LocalDateTime
+ 
+ class GetOrdersUseCaseTest {
+-
+     private val jan = LocalDateTime.of(2024,1,1,0,0)
+-    private val mar = LocalDateTime.of(2024, 3, 1, 0, 0)
+-    private val jun = LocalDateTime.of(2024, 6, 1, 0, 0)
+-
++    private val march = LocalDateTime.of(2024,3,1,0,0)
++    private val june = LocalDateTime.of(2024,6,1,0,0)
+     @Test
+     fun `when getting orders, then asks the repository exactly once`() = runTest {
+         val repo = FakeOrderRepository(listOf(anOrder()))
+ 
+-        GetOrdersUseCase(repo)()
++        val useCase = GetOrdersUseCase(repo)()
+ 
+         assertEquals(1, repo.getOrdersCalls)
++
+     }
+ 
+     @Test
+     fun `given unsorted orders, when getting orders, then returns newest first` () = runTest {
+         val oldest = anOrder {id = 1; orderDate = jan }
+-        val newest = anOrder { id = 2; orderDate = jun }
+-        val middle = anOrder { id = 3; orderDate = mar }
++        val newest = anOrder {id = 2; orderDate = june }
++        val middle = anOrder {id = 3; orderDate = march }
+ 
+         val repo = FakeOrderRepository(listOf(oldest, newest, middle))
++
+         val useCase = GetOrdersUseCase(repo)
+ 
+         val result = useCase()
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModelTest.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModelTest.kt
+index 133feb5..cb5f6fd 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModelTest.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/features/orders/presentation/OrdersViewModelTest.kt
+@@ -5,33 +5,33 @@ import app.cash.turbine.test
+ import PKG.jetpackcomposedemos.core.LoadableState
+ import PKG.jetpackcomposedemos.features.orders.data.FakeOrderRepository
+ import PKG.jetpackcomposedemos.features.orders.domain.GetOrdersUseCase
+-import PKG.jetpackcomposedemos.features.orders.domain.Order
+ import PKG.jetpackcomposedemos.features.orders.domain.OrderRepository
+-import PKG.jetpackcomposedemos.testutil.MainDispatcherRule
+ import PKG.jetpackcomposedemos.testutil.builders.anOrder
++import PKG.jetpackcomposedemos.testutil.user.MainDispatcherRule
+ import junit.framework.TestCase.assertEquals
+-import kotlinx.coroutines.cancel
+-import kotlinx.coroutines.delay
+-import kotlinx.coroutines.test.advanceTimeBy
+-import kotlinx.coroutines.test.advanceUntilIdle
+ import kotlinx.coroutines.test.runTest
+ import org.junit.Rule
+ import org.junit.Test
+ import java.io.IOException
++import PKG.jetpackcomposedemos.features.orders.domain.Order
++import kotlinx.coroutines.cancel
++import kotlinx.coroutines.delay
++import kotlinx.coroutines.test.advanceTimeBy
++import kotlinx.coroutines.test.advanceUntilIdle
+ 
+ class OrdersViewModelTest {
+ 
+     @get:Rule
+     val mainDispatcherRule = MainDispatcherRule()
+ 
+-    private fun viewModelWith(repo: OrderRepository): OrdersViewModel {
++    private fun viewModelWidth(repo: OrderRepository): OrdersViewModel {
+         return OrdersViewModel(GetOrdersUseCase(repo))
+     }
+ 
+     @Test
+-    fun `starts in Loading state before anything is requested`() = runTest {
++    fun `starts in loading state before anything is requested`() = runTest{
+ 
+-        val viewModel = viewModelWith(FakeOrderRepository())
++        val viewModel = viewModelWidth(FakeOrderRepository())
+ 
+         viewModel.uiState.test{
+             assertEquals(LoadableState.Loading, awaitItem())
+@@ -42,7 +41,7 @@ class OrdersViewModelTest {
+     @Test
+     fun `given orders are available, when loading, then moves from Loading to Success`() = runTest{
+         val orders = listOf(anOrder{id = 1})
+-        val viewModel = viewModelWith(FakeOrderRepository(orders))
++        val viewModel = viewModelWidth(FakeOrderRepository(orders))
+ 
+         viewModel.uiState.test {
+             assertEquals(LoadableState.Loading, awaitItem())
+@@ -55,10 +53,12 @@ class OrdersViewModelTest {
+     }
+ 
+     @Test
+-    fun `given the repository fails, when loading, then moves from Loading to Error with its message`() = runTest {
++    fun `given the repository fails, when loading, then moves from Loading to Error with its message`()
++    = runTest {
+ 
+         val repo = FakeOrderRepository(failure = IOException("network down"))
+-        val viewModel = viewModelWith(repo)
++
++        val viewModel = viewModelWidth(repo)
+ 
+         viewModel.uiState.test {
+             assertEquals(LoadableState.Loading, awaitItem())
+@@ -70,7 +70,7 @@ class OrdersViewModelTest {
+     }
+ 
+     @Test
+-    fun `given an earlier failure, when retrying, then shows Loading again before Success`() = runTest {
++    fun `given an earlier failure, when trying, then shows Loading again before Success`() = runTest{
+         val orders = listOf(anOrder{ id = 1 })
+         var shouldFail = true
+         val repo = object: OrderRepository {
+@@ -79,7 +79,8 @@ class OrdersViewModelTest {
+                 return orders
+             }
+         }
+-        val viewModel = viewModelWith(repo)
++
++        val viewModel = viewModelWidth(repo)
+ 
+         viewModel.uiState.test {
+             assertEquals(LoadableState.Loading, awaitItem())
+@@ -106,13 +104,12 @@ class OrdersViewModelTest {
+                 return emptyList()
+             }
+         }
+-        val viewModel = viewModelWith(repo)
++        val viewModel = viewModelWidth(repo)
+ 
+         viewModel.loadData()
+         advanceTimeBy(1_000)
+-        viewModel.viewModelScope.cancel()       // the user navigated away from the screen
++        viewModel.viewModelScope.cancel()
+         advanceUntilIdle()
+-
+         assertEquals(LoadableState.Loading, viewModel.uiState.value)
+     }
+ 
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt
+index 792c1e7..441503c 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/artist.kt
+@@ -6,7 +6,7 @@ fun anArtist(
+     id: Int = 1,
+     name: String = "Test Artist",
+     genre: String = "Rock",
+-    location: String = "New York, NY",
++    location: String = "New York. NY",
+     imageUrl: String = "",
+     description: String = "",
+     isAvailable: Boolean = true
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/lineItemDto.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/lineItemDto.kt
+index 83fa267..4d5a08b 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/lineItemDto.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/lineItemDto.kt
+@@ -17,5 +17,5 @@ fun aLineItemDto(
+ ) = OrderLineItemDto(
+     id, customerId, firstName, lastName, orderDate, shipDate,
+     productName, orderNumber, orderQty, unitPrice, lineTotal
+-)
+ 
++)
+\ No newline at end of file
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/order.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/order.kt
+index 6d68b50..9311bba 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/order.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/builders/order.kt
+@@ -1,24 +1,23 @@
+ ﻿package PKG.jetpackcomposedemos.testutil.builders
+ 
++import java.time.LocalDateTime
+ import PKG.jetpackcomposedemos.features.orders.domain.LineItem
+ import PKG.jetpackcomposedemos.features.orders.domain.Order
+-import java.time.LocalDateTime
+ 
+ class OrderBuilder {
+     var id: Int = 1
+-    var customerId: Int = 100
+-    var firstName: String = "Ada"
++    var customerId: Int = 1
++    var firstName: String = "ada"
+     var lastName: String = "Lovelace"
+     var orderDate: LocalDateTime = LocalDateTime.of(2024, 1, 1,0, 0)
+     var shipDate: LocalDateTime? = null // delay setting the default value
+-                                            // for any with computed defaults
+ 
+     private val items = mutableListOf<LineItem>()
+ 
+     fun item(
+         productName: String = "Widget",
+         qty: Int = 1,
+-        unitPrice: Double = 10.0
++        unitPrice: Double = 10.0,
+     ) {
+         items += aLineItem(
+             id = items.size + 1,
+@@ -34,10 +33,10 @@ class OrderBuilder {
+         firstName = firstName,
+         lastName = lastName,
+         orderDate = orderDate,
+-        shipDate = shipDate ?: orderDate.plusDays(2),   // computed default
++        shipDate = shipDate ?: orderDate.plusDays(2), // computer default
+         items = items.toList()
+-    )
+ 
++        )
+ }
+ 
+ fun anOrder(block: OrderBuilder.() -> Unit = {}): Order  =
+diff --git a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/MainDispatcherRule.kt b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/user/MainDispatcherRule.kt
+similarity index 86%
+rename from prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/MainDispatcherRule.kt
+rename to mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/user/MainDispatcherRule.kt
+index 3e540b0..67e37f6 100644
+--- a/prof/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/MainDispatcherRule.kt
++++ b/mine/app/src/test/java/com/PKG/jetpackcomposedemos/testutil/user/MainDispatcherRule.kt
+@@ -1,4 +1,4 @@
+-﻿package PKG.jetpackcomposedemos.testutil
++﻿package PKG.jetpackcomposedemos.testutil.user
+ 
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.ExperimentalCoroutinesApi
+diff --git a/prof/gradle/libs.versions.toml b/mine/gradle/libs.versions.toml
+index bb5a69d..f5c7f8a 100644
+--- a/prof/gradle/libs.versions.toml
++++ b/mine/gradle/libs.versions.toml
+@@ -17,8 +17,9 @@ lifecycle = "2.11.0"
+ hiltVersion = "2.60.1"
+ retrofitVersion = "3.0.0"
+ okhttpVersion = "5.5.0"
+-foundationLayout = "1.12.1"
+-roomVersion = "2.8.5"
++roomversion = "2.8.5"
++material3 = "1.4.0"
++runner = "1.7.0"
+ uiTest = "1.12.1"
+ 
+ 
+@@ -54,26 +56,25 @@ hilt-navigation = { group = "androidx.hilt", name = "hilt-navigation-compose", v
+ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofitVersion" }
+ retrofit-converter = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofitVersion" }
+ okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttpVersion" }
+-okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpVersion" }
+-androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomVersion" }
+-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomVersion" }
+-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
++okhttp-logging-intercepter = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpVersion" }
++room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomversion" }
++room-compiler = { group = "androidx.room", name= "room-compiler", version.ref = "roomversion"}
++room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomversion" }
++androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version = "1.11.0" }
+ turbine = { group = "app.cash.turbine", name = "turbine", version = "1.2.1" }
+ espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoCore" }
+-androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test", version.ref = "uiTest" }
+ hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hiltVersion" }
+-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "roomVersion" }
++room-testing = { group = "androidx.room", name = "room-testing", version.ref = "roomversion" }
+ kotlinx-coroutines-bom = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-bom", version = "1.11.0" }
++androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
+ androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitVersion" }
+ 
+ [bundles]
+ coil = [ "coil-compose", "coil-loader" ]
+ lifecycle = [ "androidx-lifecycle-runtime", "androidx-lifecycle-viewmodel" ]
+ retrofit = [ "retrofit", "retrofit-converter" ]
+-okhttp = [ "okhttp", "okhttp-logging-interceptor" ]
+-
++okhttp = [ "okhttp", "okhttp-logging-intercepter" ]
+ 
+ [plugins]
+ android-application = { id = "com.android.application", version.ref = "agp" }
+@@ -81,4 +82,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
+ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin"}
+ hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hiltVersion" }
+ devtools-ksp = { id = "com.google.devtools.ksp", version = "2.3.12"}
+-androidx-room = { id = "androidx.room", version.ref = "roomVersion" }
++androidx-room = { id = "androidx.room", version.ref = "roomversion" }
++
+diff --git a/prof/gradle/wrapper/gradle-wrapper.properties b/mine/gradle/wrapper/gradle-wrapper.properties
+index dbde9d3..a42f75a 100644
+--- a/prof/gradle/wrapper/gradle-wrapper.properties
++++ b/mine/gradle/wrapper/gradle-wrapper.properties
+@@ -1,4 +1,4 @@
+-﻿#Mon Sep 28 09:26:06 EDT 2026
++﻿#Mon Sep 28 09:01:23 CDT 2026
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ distributionSha256Sum=bbaeb2fef8710818cf0e261201dab964c572f92b942812df0c3620d62a529a01
+diff --git a/prof/gradle.properties b/mine/gradle.properties
+index e36ff34..418bca8 100644
+--- a/prof/gradle.properties
++++ b/mine/gradle.properties
+@@ -18,23 +18,9 @@ org.gradle.configuration-cache=true
+ # Kotlin code style for this project: "official" or "obsolete":
+ kotlin.code.style=official
+ 
+-# Newer versions of Android Gradle Plugin use built-in Kotlin support
++# Newer versions of Android Gradle plugions use built-in kotlin support
+ # which restricts plugins from using kotlin.sourceSets in favor of android.sourceSets
+ # but the KSP plugin automatically hooks into kotlin.sourceSets
+-# so those must be allowed
+ android.disallowKotlinSourceSets=false
+-# eventually, a permanent, flag-gree resolution is planned, but for now this is the fix
+-# Google's KSP GitHub Repository has an issue for this where you can track progress
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
++# eventually, a permanent, flag-gree resoulution is planned, but for now this is the fix
++# Google's KSP Github Reposiitory has an issue for this where you can track progress
+\ No newline at end of file

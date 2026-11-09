@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,14 +26,29 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.filled.Filter
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.jetpackcomposedemos.R
 import com.example.jetpackcomposedemos.core.presentation.TextFilter
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
@@ -45,36 +61,94 @@ fun ArtistDirectory(
     useTwoPaneLayout: Boolean,
     onBack: () -> Unit = {},
     onArtistSelected: (Int) -> Unit = {},
+    onRefresh: () -> Unit = {},
+    onDismissError: () -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
     onGenreChange: (String) -> Unit = {},
     onLocationChange: (String) -> Unit = {},
     onShowFilterChange: (Boolean) -> Unit = {}
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val retryLabel = stringResource(R.string.artists_retry)
+
+    // we're going to add a search bar (Text input) to the top of the screen
+    // Being the first thing that can take focus, Android would focus it
+    // when the screen load. We don't want that. We want the user to
+    // tap on the text inout when they want to search
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(Unit) {
+        // we want to pause and delay until the next rendering frame execute
+        withFrameNanos{}
+        focusManager.clearFocus(force = true)
+    }
+
+    /// A failed refresh should keep the cached artists on screen and
+    // tell the user why, with a way to try again
+    LaunchedEffect(state.errorMessage) {
+        val message = state.errorMessage ?: return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = retryLabel,
+            duration = SnackbarDuration.Long
+        )
+        onDismissError()
+        if (result == SnackbarResult.ActionPerformed) {
+            onRefresh()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Column {
                 TopAppBar(
                     title = {
-                        Text("Available Artists")
+                        Text(stringResource(R.string.artists_title))
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Return to dashboard"
+                                contentDescription = stringResource(R.string.artists_back)
                             )
                         }
                     }
                 )
+
+                DockedSearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = state.searchQuery,
+                            onQueryChange = onSearchQueryChange,
+                            onSearch = {},
+                            expanded = false,
+                            onExpandedChange = {},
+                            placeholder = { Text(stringResource(R.string.artists_search_hint)) },
+                            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null)}
+
+                        )
+                    },
+                    expanded = false,
+                    onExpandedChange = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    content = {}
+                )
+
                 Text(
-                    text = "Displaying ${state.displayedArtists.size} artists",
+                    text = pluralStringResource(
+                        R.plurals.artists_displaying,
+                        state.displayedArtists.size,
+                        state.displayedArtists.size
+                    ),
                     modifier = Modifier.padding(0.dp, 12.dp)
                 )
             }
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text("Show filter") },
+                text = { Text(stringResource(R.string.artists_show_filter)) },
                 icon = {
                     Icon(Icons.Filled.Filter, contentDescription = "Show filter")
                 },
@@ -92,7 +166,11 @@ fun ArtistDirectory(
                     .padding(innerPadding),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(modifier = Modifier.weight(1f)) {
+                PullToRefreshBox(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.weight(1f))
+                {
                     ArtistList(
                         artists = state.displayedArtists,
                         onArtistSelected = onArtistSelected,
@@ -104,7 +182,7 @@ fun ArtistDirectory(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Selected artist")
+                    Text(stringResource(R.string.artists_selected))
                     val selectedArtist = state.selectedArtist
                     AnimatedVisibility(
                         visible = selectedArtist != null,
@@ -122,11 +200,17 @@ fun ArtistDirectory(
             }
 
         } else {
-            ArtistList(
-                artists = state.displayedArtists,
-                onArtistSelected = onArtistSelected,
-                innerPadding = innerPadding
-            )
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize().padding(innerPadding)
+            ) {
+                ArtistList(
+                    artists = state.displayedArtists,
+                    onArtistSelected = onArtistSelected,
+                    innerPadding = PaddingValues(0.dp)
+                )
+            }
         }
 
 
@@ -141,16 +225,16 @@ fun ArtistDirectory(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Filter Artists",
+                        text = stringResource(R.string.artists_show_filter),
                         style = MaterialTheme.typography.titleSmall
                     )
                     TextFilter(
-                        label = "Genre",
+                        label = stringResource(R.string.artists_genre_label),
                         filter = state.genreFilter,
                         onFilterChange = onGenreChange
                     )
                     TextFilter(
-                        label = "Location",
+                        label = stringResource(R.string.artists_location_label),
                         filter = state.locationFilter,
                         onFilterChange = onLocationChange
                     )

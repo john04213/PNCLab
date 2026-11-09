@@ -11,6 +11,12 @@ room {
     schemaDirectory("${projectDir}/schemas")
 }
 
+composeCompiler {
+    reportsDestination.set(layout.buildDirectory.dir("compose_compiller"))
+    metricsDestination.set(layout.buildDirectory.dir("compose_compiler"))
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose_stability.conf"))
+}
+
 android {
     namespace = "com.example.jetpackcomposedemos"
     compileSdk {
@@ -27,9 +33,21 @@ android {
         testInstrumentationRunner = "com.example.jetpackcomposedemos.HiltTestRunner"
         buildConfigField("String", "BASE_URL", "\"https://kazoopromotions.com/api/\"")
         buildConfigField("String", "AW_BASE_URL", "\"https://api.bootcampcentral.com/api/\"")
+        buildConfigField("String", "AUTH_BASE_URL", "\"https://api.bootcampcentral.com/\"")
+        buildConfigField("String", "OIDC_REDIRECT_URI", "\"com.pnc.jetpackcomposedemos:/oauth2redirect\"")
+        buildConfigField("String", "OIDC_SCOPES", "\"openid profile offline_access orders.read\"")
+        buildConfigField("String", "OIDC_CLIENT_ID", "\"adventureworks-mobile\"")
     }
 
+    androidResources {
+        generateLocaleConfig = true
+    }
+
+
     buildTypes {
+        debug {
+            isPseudoLocalesEnabled = true
+        }
         release {
             optimization {
                 enable = false
@@ -64,6 +82,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.paging.common)
     implementation(libs.androidx.recyclerview)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -99,6 +119,13 @@ dependencies {
     androidTestImplementation(platform(libs.kotlinx.coroutines.bom))
     androidTestImplementation(libs.turbine)
     androidTestImplementation(libs.androidx.junit.ktx)
+    implementation(libs.androidx.browser)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.compose.material3.adaptive.layout)
+    implementation(libs.androidx.compose.material3.adaptive.navigation)
+    implementation(libs.androidx.paging.compose)
+    androidTestImplementation(libs.androidx.paging.testing)
 }
 
 configurations.configureEach {

@@ -6,6 +6,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -16,13 +17,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.example.jetpackcomposedemos.R
+import com.example.jetpackcomposedemos.core.settings.LocalAppSettings
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
 
@@ -31,7 +38,7 @@ fun ArtistCard(
     artist: Artist,
     onClick: () -> Unit
 ) {
-    var isFavorite by remember {
+    var isFavorite by rememberSaveable() {
         mutableStateOf(false)
     }
 
@@ -65,7 +72,10 @@ fun ArtistCard(
                     painter = painterResource(
                         id = if (isFavorite) R.drawable.filled_star else R.drawable.outline_star
                     ),
-                    contentDescription = if (isFavorite) "Favorite" else "Not favorite",
+                    contentDescription = if (isFavorite)
+                        stringResource(R.string.artist_favorite)
+                    else
+                        stringResource(R.string.artist_not_favorite),
                     tint = if (isFavorite)
                         MaterialTheme.colorScheme.primary
                     else
@@ -76,14 +86,27 @@ fun ArtistCard(
                     }
                 )
             }
+            AsyncImage(
+                model = "https://kazoopromotions.com${artist.imageUrl}",
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(96.dp)
+                    .artistImageSharedElement(artist.id)
+                    .clip(MaterialTheme.shapes.medium)
+
+            )
             Text(
                 text = artist.name,
                 style = MaterialTheme.typography.titleMedium
             )
+
             Text(
-                "Genre: ${artist.genre}"
+                stringResource(R.string.artist_genre, artist.genre)
             )
-            Text("Location: ${artist.location}")
+            if(LocalAppSettings.current.showArtistLocation) {
+                stringResource(R.string.artist_location, artist.location)
+            }
         }
     }
 

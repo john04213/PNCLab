@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,22 +17,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.example.jetpackcomposedemos.R
 import com.example.jetpackcomposedemos.core.LoadableState
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.features.artists.presentation.viewmodels.ArtistDetailsViewModel
 import com.example.jetpackcomposedemos.ui.theme.JetpackComposeDemosTheme
+import com.example.jetpackcomposedemos.ui.theme.LocalSpacing
 
 @Composable
 fun ArtistDetails(
     artistId: Int,
     viewModel: ArtistDetailsViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(artistId) {
         viewModel.loadArtist(artistId)
@@ -47,28 +52,33 @@ fun ArtistDetails(
         is LoadableState.Success -> {
             val artist = (state as LoadableState.Success<Artist>).data
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.LightGray)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    artist.name,
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Text(
-                    artist.genre,
-                    color = Color.Gray
-                )
-                Text(artist.location)
-                AsyncImage(
-                    model = "https://kazoopromotions.com${artist.imageUrl}",
-                    contentDescription = "picture of ${artist.name}",
-                    modifier = Modifier.size(250.dp)
-                )
-                Text(artist.description)
+            Surface(
+                shape = RoundedCornerShape(LocalSpacing.current.medium),
+                color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.large),
+                    modifier = Modifier
+                        .padding(LocalSpacing.current.large)
+                ) {
+                    Text(
+                        artist.name,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                    Text(
+                        artist.genre,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(artist.location)
+                    AsyncImage(
+                        model = "https://kazoopromotions.com${artist.imageUrl}",
+                        contentDescription = stringResource(R.string.artist_picture, artist.name),
+                        modifier = Modifier
+                            .size(250.dp)
+                            .artistImageSharedElement(artist.id)
+                    )
+                    Text(artist.description)
+                }
             }
         }
         is LoadableState.Error -> {

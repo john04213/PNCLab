@@ -4,6 +4,7 @@ import com.example.jetpackcomposedemos.features.artists.domain.Artist
 
 data class ArtistDirectoryState(
     val artists: List<Artist> = emptyList(),
+    val searchQuery: String = "",
     val genreFilter: String = "",
     val locationFilter: String = "",
     val showFilter: Boolean = false,
@@ -15,8 +16,8 @@ data class ArtistDirectoryState(
         get() = artists.filter {
             val matchesGenre = genreFilter == "" || it.genre.contains(genreFilter, ignoreCase = true)
             val matchesLocation = locationFilter == "" || it.location.contains(locationFilter, ignoreCase = true)
-
-            matchesGenre && matchesLocation
+            val matchesSearch = searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true)
+            matchesGenre && matchesLocation && matchesSearch
         }
 
     val selectedArtist: Artist?

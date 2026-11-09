@@ -7,7 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.jetpackcomposedemos.R
 import com.example.jetpackcomposedemos.core.LoadableState
 import com.example.jetpackcomposedemos.features.todo.domain.ToDo
 
@@ -16,7 +19,7 @@ fun ToDosScreen(
     useTwoPaneLayout: Boolean,
     viewModel: ToDosViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.loadToDos()
@@ -24,7 +27,7 @@ fun ToDosScreen(
 
     when (uiState) {
         is LoadableState.Loading -> CircularProgressIndicator()
-        is LoadableState.Empty -> Text("No to-dos")
+        is LoadableState.Empty -> Text(stringResource(R.string.todo_empty))
         is LoadableState.Error -> {
             val errorMessage = (uiState as LoadableState.Error).message
             Text(
@@ -42,7 +45,10 @@ fun ToDosScreen(
                 },
                 onToggleCompleted = { item: ToDo ->
                     viewModel.toggleCompleted(item)
-                }
+                },
+                onDelete = viewModel::deleteToDo,
+                onUndoDelete = viewModel::restoreToDo,
+                onReorder = viewModel::reorder
             )
         }
     }

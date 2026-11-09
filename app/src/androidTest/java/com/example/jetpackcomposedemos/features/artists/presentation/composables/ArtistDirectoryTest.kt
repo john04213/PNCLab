@@ -6,11 +6,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import com.example.jetpackcomposedemos.features.artists.domain.Artist
 import com.example.jetpackcomposedemos.features.artists.presentation.state.ArtistDirectoryState
@@ -88,6 +90,8 @@ class ArtistDirectoryTest {
         setDirectory(ArtistDirectoryState(artists = artists))
 
         artists.map{ it.name }.forEach { name ->
+            // each card now has a picture, so they may not all fit onScreen at once
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(name))
             composeRule.onNodeWithText(name, useUnmergedTree = true).assertIsDisplayed()
         }
     }
