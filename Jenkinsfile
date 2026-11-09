@@ -8,8 +8,8 @@ pipeline {
 	options {
 		timestamps()
 		timeout(time: 45, unit: 'MINUTES')
-		disabledConcurrentBuilds()
-		buildDiscarder(logRotator(numToKeepStr: '10', artifctNumToKeepStr: '6'))
+		disableConcurrentBuilds()
+		buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '6'))
 
 	}
 
@@ -18,11 +18,11 @@ pipeline {
 	}
 
 	stages{
-		state('Hello') {
+		stage('Hello') {
 			steps {
 				echo "Building ${env.JOB_NAME} #${env.BUILD_NUMBER} on ${env.NODE_NAME}"
 				bat 'java --version'
-				bat 'git log -1 --oneLine'
+				bat 'git log -1 --oneline'
 			}
 		}
 	}
