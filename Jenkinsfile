@@ -39,7 +39,7 @@ pipeline {
 		}
 		stage('Unit test'){
 			steps {
-				catchError(buildResult: 'UNSTABLE', stepResult: 'UNSTABLE') {
+				catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
 					bat "${GRADLE} testDebugUnitTest"
 				}
 			}
