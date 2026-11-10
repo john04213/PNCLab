@@ -7,6 +7,8 @@ class FakeAuthApi: AuthApi {
     var failure: Throwable? = null
 
     var exchangeCalls = 0
+    var refreshCalls = 0
+    var refreshFailure: Throwable? = null
     var lastCode: String? = null
     var lastVerifier: String? = null
     var lastRedirectUri: String? = null
@@ -23,7 +25,8 @@ class FakeAuthApi: AuthApi {
     }
 
     override suspend fun refresh(grantType: String, clientId: String, refreshToken: String): TokenResponse {
-        failure?.let { throw it }
+        refreshCalls++
+        refreshFailure?.let { throw it }
         return response!!
     }
 
