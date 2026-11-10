@@ -44,7 +44,7 @@ pipeline {
 			post {
 				always {
 					recordIssues enabledForFailure: true,
-					tools: [androidLintParser(pattern: 'app/buikd/reports/lint-results-debug.xml')]
+					tools: [androidLintParser(pattern: 'app/build/reports/lint-results-debug.xml')]
 				}
 			}
 		}
