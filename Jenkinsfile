@@ -48,6 +48,29 @@ pipeline {
 				}
 			}
 		}
+
+		stage('Static analysis') {
+			steps {
+				bat "${GRADLE} detekt ktlintCheck"
+			}
+			post {
+				always {
+					recordIssues enabledForFailure: true,
+					tool: checkStyle(id: 'detekt',
+					nmae: 'detekt',
+					pattern: 'app/build/reports/detekt/detekt.xml'
+					),
+					qualityGates: [[threshold: 1, type: 'NEW',unstable: true]]
+					recordIssues enabledForFailure: true,
+					too: checkStyle(id: 'ktlint',
+					name: 'ktlint',
+					pattern:'app/build/reports/ktlint/**/*.xml'
+					),
+					qualityGates: [[threshold: 1, type: 'NEW',unstable: true]]
+				}
+			}
+		}
+
 		stage('Unit test'){
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
