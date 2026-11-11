@@ -62,7 +62,7 @@ pipeline {
 					),
 					qualityGates: [[threshold: 1, type: 'NEW',unstable: true]]
 					recordIssues enabledForFailure: true,
-					too: checkStyle(id: 'ktlint',
+					tool: checkStyle(id: 'ktlint',
 					name: 'ktlint',
 					pattern:'app/build/reports/ktlint/**/*.xml'
 					),
