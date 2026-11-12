@@ -58,7 +58,7 @@ pipeline {
 					steps {
 							recordIssues enabledForFailure: true,
 							tool: checkStyle(id: 'detekt',
-								nmae: 'detekt',
+								name: 'detekt',
 								pattern: 'app/build/reports/detekt/detekt.xml'
 							),
 							qualityGates: [[threshold: 1, type: 'NEW',unstable: true]]
@@ -74,7 +74,7 @@ pipeline {
 					steps {
 						bat 'powershell -NoProfile -ExecutionPolicy Bypass -File ci\\coverage-gate.ps1 -Report app/build/reports/coverage/test/debug/report.xml -Min 10'
 						recordCoverage(
-							tools: [[parser: 'JACOCO', pattern: 'app/build/reports/coverage/test/debug/reports.cml']],
+							tools: [[parser: 'JACOCO', pattern: 'app/build/reports/coverage/test/debug/reports.xml']],
 							sourceCodeRetention: 'NEVER'
 						)
 					}
@@ -122,7 +122,7 @@ pipeline {
 			echo "Finished with  result: ${currentBuild.currentResult}"
 		}
 		failure {
-			echo 'Build failed: open the first red stafe and read the log from the bottom'
+			echo 'Build failed: open the first red stage and read the log from the bottom'
 		}
 	}
 
