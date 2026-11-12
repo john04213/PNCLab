@@ -49,7 +49,7 @@ pipeline {
 
 		stage('Publish reports') {
 			parallel {
-				stage {
+				stage('Tests') {
 					steps {
 						junit testResults: 'app/build/test-results/testDebugUnitTest/*.xml',
 						allowEmptyResults: false
