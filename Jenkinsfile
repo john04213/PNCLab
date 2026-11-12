@@ -18,13 +18,6 @@ pipeline {
 	}
 
 	stages{
-		//stage('Hello') {
-		//	steps {
-		//		echo "Building ${env.JOB_NAME} #${env.BUILD_NUMBER} on ${env.NODE_NAME}"
-		//		bat 'java --version'
-		//		bat 'git log -1 --oneline'
-		//	}
-		//}
 		stage('Check tools') {
 			steps {
 				bat 'java -version'
