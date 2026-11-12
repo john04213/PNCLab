@@ -98,7 +98,7 @@ pipeline {
 				withCredentials([
 					file(credentialsId: 'android-keystore', variable: 'KEYSTORE_FILE'),
 					string(credentialsId: 'android-store-password', variable: 'KEYSTORE_PASSWORD'),
-					usernamePassword(credentials:'android-key', usernameVariable: 'KEY_ALIAS',
+					usernamePassword(credentialsId:'android-key', usernameVariable: 'KEY_ALIAS',
 					passwordVariable: 'KEY_PASSWORD')
 				]) {
 					bat "${GRADLE} assembleRelease"
